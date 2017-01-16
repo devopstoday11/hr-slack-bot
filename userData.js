@@ -422,6 +422,9 @@ bot.message((message) => {
 						if (error) log.saveLogs(message.user, err, new Date());
 					});
 				});
+			}).catch((err) => {
+				log.saveLogs(message.user, err, new Date());
+				Message.postErrorMessage(message, err);
 			});
 			} catch (err) {
 				log.saveLogs(message.user, err, new Date());
