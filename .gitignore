@@ -38,3 +38,9 @@ jspm_packages
 
 # Config files
 config/index.js
+
+schemas/.DS_Store
+
+sheets
+
+.DS_Store
