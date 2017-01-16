@@ -306,78 +306,82 @@ bot.message((message) => {
 			Message.postErrorMessage(message, new Error('\nYou are not having permission to access user data!! :rage:'));
 			break;
 		case 'EXCEL':
-			const styles = {
-				headerDark: {
-					fill: {
-						fgColor: {
-							rgb: 'FF000000'
+			try {
+				const styles = {
+					headerDark: {
+						fill: {
+							fgColor: {
+								rgb: 'FF000000'
+							},
+							sz: 15
 						},
-						sz: 15
+						font: {
+							color: {
+								rgb: 'FFFFFFFF'
+							},
+							sz: 14,
+							bold: true,
+							underline: true
+						}
 					},
-					font: {
-						color: {
-							rgb: 'FFFFFFFF'
-						},
-						sz: 14,
-						bold: true,
-						underline: true
+					cellPink: {
+						fill: {
+							fgColor: {
+								rgb: 'FFFFCCFF'
+							},
+							sz: 15
+						}
+					},
+					cellGreen: {
+						fill: {
+							fgColor: {
+								rgb: '00FF0000'
+							},
+							sz: 15
+						}
 					}
-				},
-				cellPink: {
-					fill: {
-						fgColor: {
-							rgb: 'FFFFCCFF'
-						},
-						sz: 15
-					}
-				},
-				cellGreen: {
-					fill: {
-						fgColor: {
-							rgb: '00FF0000'
-						},
-						sz: 15
-					}
-				}
-			};
+				};
 
 			// Array of objects representing heading rows (very top)
 			// Here you specify the export structure
-			const specification = {
-				date: {
-					displayName: 'date',
-					headerStyle: styles.headerDark,
-					width: '12'
-				},
-				inTime: {
-					displayName: 'in time',
-					headerStyle: styles.headerDark,
-					width: '10'
-				},
-				outTime: {
-					displayName: 'out time',
-					headerStyle: styles.headerDark,
-					width: '10'
-				},
-				tasksPlanned: {
-					displayName: 'planned tasks',
-					headerStyle: styles.headerDark,
-					width: '10'
-				},
-				tasksCompleted: {
-					displayName: 'completed tasks',
-					headerStyle: styles.headerDark,
-					width: '10'
-				},
-			};
-			const dataset = [];
-			let datasetTemp = [];
-			spaceIndex = message.text.indexOf(' ');
-			if (message.text.substr(0, spaceIndex) === 'excel') {
-				userId = message.text.substr(spaceIndex + 3, 9);
-			}
-			DB.getSpecificTimesheet(userId, 1, 30)
+				const specification = {
+					date: {
+						displayName: 'date',
+						headerStyle: styles.headerDark,
+						width: '12'
+					},
+					inTime: {
+						displayName: 'in time',
+						headerStyle: styles.headerDark,
+						width: '10'
+					},
+					outTime: {
+						displayName: 'out time',
+						headerStyle: styles.headerDark,
+						width: '10'
+					},
+					tasksPlanned: {
+						displayName: 'planned tasks',
+						headerStyle: styles.headerDark,
+						width: '10'
+					},
+					tasksCompleted: {
+						displayName: 'completed tasks',
+						headerStyle: styles.headerDark,
+						width: '10'
+					},
+				};
+				const dataset = [];
+				let datasetTemp = [];
+				spaceIndex = message.text.indexOf(' ');
+				if (message.text.substr(0, spaceIndex) === 'excel') {
+					userId = message.text.substr(spaceIndex + 3, 9);
+				}
+				DB.getSpecificTimesheet(userId, 1, 30)
 			.then((timesheet) => {
+				if (typeof timesheet[0] === 'undefined') {
+					throw new Error('No data to fetch!');
+				}
 				const heading = [
 				[{ value: 'Name', style: styles.headerDark }, { value: 'User Name', style: styles.headerDark }],
 				[`${timesheet[0].userRealname}\t`, `${timesheet[0].username}`]
@@ -419,6 +423,10 @@ bot.message((message) => {
 					});
 				});
 			});
+			} catch (err) {
+				log.saveLogs(message.user, err, new Date());
+				Message.postErrorMessage(message, err);
+			}
 			break;
 		default:
 			break;
