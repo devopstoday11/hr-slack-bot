@@ -11,6 +11,7 @@ const _ = require('lodash');
 const excel = require('node-excel-export');
 const fs = require('fs');
 const request = require('request');
+const log = require('./helper/logger');
 
 const temp = [];
 
@@ -37,7 +38,7 @@ function specificReport(message, timePeriod, start, end) {
 	}
 	userTemp = _.find(users, (o) => { return o.id === userId; });
 	if (userTemp.id !== userId) {
-		Message.postErrorMessage(message, 'USER NOT FOUND');
+		Message.postErrorMessage(message, new Error('USER NOT FOUND'));
 	} else {
 		DB.getSpecificTimesheet(userId, start, end)
 		.then((timesheet) => {
@@ -53,7 +54,6 @@ function specificReport(message, timePeriod, start, end) {
 				attachment.push(attach);
 				i += 1;
 			});
-			// console.log(attachment);
 			Message.postSpecificReport(timesheet, attachment, timePeriod);
 			attachment = [];
 		});
@@ -86,17 +86,15 @@ bot.started((payload) => {
  * }
  */
 bot.message((message) => {
-	console.log('\n******************************\n', message, '\n******************************\n');
+	// console.log('\n******************************\n', message, '\n******************************\n');
 	const user = _.find(users, { id: message.user });
 	let testCase = '';
 	if (message.type === 'message' && !message.subtype && !message.bot_id) {
 		try {
 			// User entry
 			if (message.text.toLowerCase() === 'in' || message.text.toLowerCase().indexOf('in ') === 0) {
-				// console.log(1, 'in');
 				testCase = 'IN';
 			} else if (message.text.toLowerCase() === 'out' || message.text.toLowerCase().indexOf('out ') === 0) {
-				// console.log(2, 'out');
 				testCase = 'OUT';
 			} else if (message.text.toLowerCase() === 'week' || message.text.toLowerCase().indexOf('week ') === 0) {
 				if (message.text.toLowerCase().indexOf('week <@') === 0) {
@@ -119,7 +117,6 @@ bot.message((message) => {
 					testCase = 'WRONG';
 				}
 			} else if (message.text.toLowerCase() === 'help' || message.text.toLowerCase().indexOf('help ') === 0) {
-				// console.log(2, 'week');
 				testCase = 'HELP';
 			} else if (message.text.toLowerCase() === 'excel' || message.text.toLowerCase().indexOf('excel ') === 0) {
 				if (message.text.toLowerCase().indexOf('excel <@') === 0) {
@@ -132,19 +129,15 @@ bot.message((message) => {
 					testCase = 'WRONG';
 				}
 			} else {
-				// console.log(3, 'task in out');
 				testCase = 'TASK_IN_OUT';
 			}
 		} catch (err) {
-			// console.log('error::::', err);
-			// Message.postErrorMessage(message, err);
+			log.saveLogs(message.user, err, new Date());
 		}
 	} else if (message.subtype === 'message_changed') {
 		if (message.previous_message.text.indexOf('in ') === 0 || message.previous_message.text === 'in' || message.previous_message.text === 'out' || message.previous_message.text.indexOf('out ') === 0) {
-			// console.log(4, 'nothing to do');
 			testCase = 'NOTHING_TO_DO';
 		} else {
-			// console.log(5, 'message edit');
 			testCase = 'MESSAGE_EDIT';
 		}
 	}
@@ -181,14 +174,14 @@ bot.message((message) => {
 					return true;
 				})
 				.catch((err) => {
-					console.log(err);
+					log.saveLogs(message.user, err, new Date());
 					Message.postErrorMessage(message, err);
 				});
 			}
 		}).then(() => {
 			Message.postMessage(message, 'What are the tasks you are going to complete today?');
 		}).catch((err) => {
-			console.log(err);
+			log.saveLogs(message.user, err, new Date());
 			Message.postErrorMessage(message, err);
 		});
 			break;
@@ -223,11 +216,11 @@ bot.message((message) => {
 							console.log('----------------------- USER IS OUT -------------------------\n');
 							return true;
 						}).then(() => {
-							Message.postMessage(message, '\nWhich of the below tasks you have completed today?\n', timesheet.tasks);
+							Message.postMessageWithAttachment(message, '\nWhich of the below tasks you have completed today?\n', timesheet.tasks);
 						});
 				}
 			}).catch((err) => {
-				console.log(err);
+				log.saveLogs(message.user, err, new Date());
 				Message.postErrorMessage(message, err);
 			});
 			break;
@@ -239,26 +232,23 @@ bot.message((message) => {
 						if (!timesheet.outTime && !timesheet.tasks) {
 							DB.saveTask(timesheet, task, message.ts)
 									.then((updatedTime) => {
-										// console.log(123);
-										// console.log('task in', updatedTime);
 										Message.postChannelMessage(message, updatedTime, updatedTime.inTime, 'Today\'s Tasks', 'msgTs');
+										Message.postMessage(message, ':thumbsup_all:');
 										console.log('-----------------tasks added------------------\n');
 									}).catch((err) => {
-										console.log(err);
+										log.saveLogs(message.user, err, new Date());
 									});
 						} else if (timesheet.outTime && !timesheet.taskDone) {
-						//	console.log('hello', timesheet);
 							DB.saveTaskDone(timesheet, task, message.ts)
 								.then((updatedTime) => {
-									console.log('task out', updatedTime);
 									Message.postChannelMessage(message, updatedTime, updatedTime.outTime, 'Completed Tasks', 'msgDoneTs');
+									Message.postMessage(message, ':thumbsup_all:');
 									console.log('-----------------taskDone added------------------\n');
 								}).catch((err) => {
-									console.log(err);
+									log.saveLogs(message.user, err, new Date());
 								});
 						} else {
 							console.log('--------------USER HAS ALREADY ADDED TASKS,CAN\'T ADD MORE-----------');
-							// Message.deleteMessage(message);
 							throw new Error('Wrong Command!! :sweat_smile: \n\nYou have already added tasks\nYou can\'t add more tasks,You can still edit old ones! :wink: ');
 						}
 					} else {
@@ -266,7 +256,7 @@ bot.message((message) => {
 						throw new Error('User is not in :face_with_rolling_eyes: ');
 					}
 				}).catch((err) => {
-					console.log(err);
+					log.saveLogs(message.user, err, new Date());
 					Message.postErrorMessage(message, err);
 				});
 			break;
@@ -302,18 +292,18 @@ bot.message((message) => {
 			'\n\nYou can enter the tasks only one time, after that, you can only edit that message. :thumbsup_all: \n\n\n' +
 			'Only for HR :grin: : \nWEEK @user : To get last week timesheet of @user.\n' +
 			'MONTH @user : to get last month activities of @user.';
-			Message.postErrorMessage(message, commands);
+			Message.postErrorMessage(message, new Error(commands));
 			console.log('-----------EDITED OTHER MESSAGE------------');
 			break;
 		case 'NOTHING_TO_DO':
-			Message.postErrorMessage(message, 'You can only edit task description messages! :sweat_smile:');
+			Message.postErrorMessage(message, new Error('You can only edit task description messages! :sweat_smile:'));
 			console.log('-----------EDITED OTHER MESSAGE------------');
 			break;
 		case 'WRONG':
-			Message.postErrorMessage(message, 'Wrong command! :joy: \nInstructions: :sweat_smile: \nType correct username. :sunglasses: \nOnly one space should be there after "month"/"week"\n\ne.g week @slackbot\n  month @slackbot');
+			Message.postErrorMessage(message, new Error('Wrong command! :joy: \nInstructions: :sweat_smile: \nType correct username. :sunglasses: \nOnly one space should be there after "month"/"week"\n\ne.g week @slackbot\n  month @slackbot'));
 			break;
 		case 'UNAUTHORIZED':
-			Message.postErrorMessage(message, '\nYou are not having permission to access user data!! :rage:');
+			Message.postErrorMessage(message, new Error('\nYou are not having permission to access user data!! :rage:'));
 			break;
 		case 'EXCEL':
 			const styles = {
@@ -344,7 +334,7 @@ bot.message((message) => {
 				cellGreen: {
 					fill: {
 						fgColor: {
-							rgb: 'FF00FF00'
+							rgb: '00FF0000'
 						},
 						sz: 15
 					}
@@ -357,39 +347,40 @@ bot.message((message) => {
 				date: {
 					displayName: 'date',
 					headerStyle: styles.headerDark,
-					width: '12' // <- width in chars (when the number is passed as string)
+					width: '12'
 				},
 				inTime: {
 					displayName: 'in time',
 					headerStyle: styles.headerDark,
-					width: '10' // <- width in chars (when the number is passed as string)
+					width: '10'
 				},
 				outTime: {
 					displayName: 'out time',
 					headerStyle: styles.headerDark,
-					cellStyle: styles.cellPink, // <- Cell style
-					width: '10' // <- width in pixels
+					width: '10'
 				},
 				tasksPlanned: {
 					displayName: 'planned tasks',
 					headerStyle: styles.headerDark,
-					cellStyle: styles.cellPink, // <- Cell style
-					width: '10' // <- width in pixels
+					width: '10'
 				},
 				tasksCompleted: {
 					displayName: 'completed tasks',
 					headerStyle: styles.headerDark,
-					cellStyle: styles.cellPink, // <- Cell style
-					width: '10' // <- width in pixels
+					width: '10'
 				},
 			};
 			const dataset = [];
 			let datasetTemp = [];
-			DB.getSpecificTimesheet(message.user, 1, 30)
+			spaceIndex = message.text.indexOf(' ');
+			if (message.text.substr(0, spaceIndex) === 'excel') {
+				userId = message.text.substr(spaceIndex + 3, 9);
+			}
+			DB.getSpecificTimesheet(userId, 1, 30)
 			.then((timesheet) => {
 				const heading = [
 				[{ value: 'Name', style: styles.headerDark }, { value: 'User Name', style: styles.headerDark }],
-				[`${timesheet[0].userRealname}\t`, `${timesheet[0].username}`] // <-- It can be only values
+				[`${timesheet[0].userRealname}\t`, `${timesheet[0].username}`]
 				];
 				timesheet.forEach((t, index) => {
 					datasetTemp = {
@@ -402,29 +393,29 @@ bot.message((message) => {
 					dataset.push(datasetTemp);
 				});
 				const report = excel.buildExport(
-					[ // <- Notice that this is an array. Pass multiple sheets to create multi sheet report
+					[
 						{
-							name: 'User Report', // <- Specify sheet name (optional)
-							heading, // <- Raw heading array (optional)
-							specification, // <- Report specification
-							data: dataset // <-- Report data
+							name: 'User Report',
+							heading,
+							specification,
+							data: dataset
 						}
 					]
 				);
-				fs.writeFile(`${timesheet[0].username}.xlsx`, report, (res, err) => {
-					if (err) console.log(err);
+				fs.writeFile(`sheets/${timesheet[0].username}.xlsx`, report, (res, err) => {
+					if (err) log.saveLogs(message.user, err, new Date());
 					request.post({
 						url: 'https://slack.com/api/files.upload',
 						formData: {
 							token: config.token,
 							title: 'User Report',
-							filename: 'rinkal_14.xlsx',
+							filename: `${timesheet[0].username}.xlsx`,
 							filetype: 'auto',
-							channels: config.postChannelId,
-							file: fs.createReadStream('rinkal_14.xlsx'),
+							channels: message.channel,
+							file: fs.createReadStream(`sheets/${timesheet[0].username}.xlsx`),
 						},
 					}, (error, response) => {
-						console.log(JSON.parse(response.body));
+						if (error) log.saveLogs(message.user, err, new Date());
 					});
 				});
 			});
