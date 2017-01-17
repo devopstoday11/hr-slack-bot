@@ -42,11 +42,11 @@ function specificReport(message, timePeriod, start, end) {
 	} else {
 		DB.getSpecificTimesheet(userId, start, end)
 		.then((timesheet) => {
-			let i = 1;
+			let i = 0;
 			timesheet.forEach((t, index) => {
-				const colorCode = ['#0000FF', '#36a64f'];
+				const colorCode = ['#0000FF', '#36a64f', '#cc0066', '#808000', '#b33c00', '#00cccc', '#669900'];
 				attach = {
-					color: colorCode[i % 2],
+					color: colorCode[i % 6],
 					title: `${moment(t.createdAt).format('DD-MM-YYYY')}`,
 					text: `check in time : ${t.inTime} \ncheck out time : ${t.outTime}\n\nTasks planned : \n${t.tasks} \n\nCompleted task: \n${t.taskDone}  `,
 					ts: `${t.taskDone}`
@@ -162,7 +162,7 @@ bot.message((message) => {
 							console.log('----------------------- VALID TIME -------------------------\n');
 						} else {
 							console.log('----------------------- INVALID TIME -------------------------\n');
-							throw new Error('Please enter valid time in HH:MM format ... :face_with_rolling_eyes:');
+							throw new Error('Please enter valid time in HH:MM format.\nOnly one space is allowed after IN/OUT  ... :face_with_rolling_eyes:');
 						}
 					} else {
 						throw new Error('Invalid time');
@@ -232,8 +232,8 @@ bot.message((message) => {
 						if (!timesheet.outTime && !timesheet.tasks) {
 							DB.saveTask(timesheet, task, message.ts)
 									.then((updatedTime) => {
-										Message.postChannelMessage(message, updatedTime, updatedTime.inTime, 'Today\'s Tasks', 'msgTs');
 										Message.postMessage(message, ':thumbsup_all:');
+										Message.postChannelMessage(message, updatedTime, updatedTime.inTime, 'Today\'s Tasks', 'msgTs');
 										console.log('-----------------tasks added------------------\n');
 									}).catch((err) => {
 										log.saveLogs(message.user, err, new Date());
@@ -241,8 +241,8 @@ bot.message((message) => {
 						} else if (timesheet.outTime && !timesheet.taskDone) {
 							DB.saveTaskDone(timesheet, task, message.ts)
 								.then((updatedTime) => {
-									Message.postChannelMessage(message, updatedTime, updatedTime.outTime, 'Completed Tasks', 'msgDoneTs');
 									Message.postMessage(message, ':thumbsup_all:');
+									Message.postChannelMessage(message, updatedTime, updatedTime.outTime, 'Completed Tasks', 'msgDoneTs');
 									console.log('-----------------taskDone added------------------\n');
 								}).catch((err) => {
 									log.saveLogs(message.user, err, new Date());
@@ -291,7 +291,9 @@ bot.message((message) => {
 			'OUT/OUT HH:MM : when you leave. :v: ' +
 			'\n\nYou can enter the tasks only one time, after that, you can only edit that message. :thumbsup_all: \n\n\n' +
 			'Only for HR :grin: : \nWEEK @user : To get last week timesheet of @user.\n' +
-			'MONTH @user : to get last month activities of @user.';
+			'MONTH @user : to get last month activities of @user.\n' +
+			'EXCEL @user : to get Excel sheet of all the data of @user.\n\n' +
+			'Only one space is allowed between WEEK,MONTH,EXCEL,IN,OUT and @user/Time !!';
 			Message.postErrorMessage(message, new Error(commands));
 			console.log('-----------EDITED OTHER MESSAGE------------');
 			break;
@@ -346,29 +348,39 @@ bot.message((message) => {
 			// Here you specify the export structure
 				const specification = {
 					date: {
-						displayName: 'date',
+						displayName: 'Date',
 						headerStyle: styles.headerDark,
-						width: '12'
+						width: '20'
 					},
 					inTime: {
-						displayName: 'in time',
+						displayName: 'Checked in time',
 						headerStyle: styles.headerDark,
-						width: '10'
+						width: '20'
 					},
 					outTime: {
-						displayName: 'out time',
+						displayName: 'Checked out time',
 						headerStyle: styles.headerDark,
-						width: '10'
+						width: '20'
+					},
+					actualInTime: {
+						displayName: 'Actual in time',
+						headerStyle: styles.headerDark,
+						width: '20'
+					},
+					actualOutTime: {
+						displayName: 'Actual out time',
+						headerStyle: styles.headerDark,
+						width: '20'
 					},
 					tasksPlanned: {
-						displayName: 'planned tasks',
+						displayName: 'Planned tasks',
 						headerStyle: styles.headerDark,
-						width: '10'
+						width: '30'
 					},
 					tasksCompleted: {
-						displayName: 'completed tasks',
+						displayName: 'Completed tasks',
 						headerStyle: styles.headerDark,
-						width: '10'
+						width: '30'
 					},
 				};
 				const dataset = [];
@@ -391,6 +403,8 @@ bot.message((message) => {
 						date: t.createdAt,
 						inTime: t.inTime,
 						outTime: t.outTime,
+						actualInTime: moment.unix(t.taskTs).format('HH:MM'),
+						actualOutTime: moment.unix(t.taskDoneTs).format('HH:MM'),
 						tasksPlanned: t.tasks,
 						tasksCompleted: t.taskDone
 					};
