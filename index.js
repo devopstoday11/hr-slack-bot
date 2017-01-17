@@ -67,7 +67,6 @@ bot.started((payload) => {
 			const dbUser = new UserMdl(user);
 			users.push(dbUser);
 			UserMdl.update({ id: user.id }, user, { upsert: true, setDefaultsOnInsert: true }, (err, result) => {
-				console.log(user.real_name, user.id);
 			});
 		}
 	});
@@ -232,7 +231,7 @@ bot.message((message) => {
 						if (!timesheet.outTime && !timesheet.tasks) {
 							DB.saveTask(timesheet, task, message.ts)
 									.then((updatedTime) => {
-										Message.postMessage(message, ':thumbsup_all:');
+										Message.postMessage(message, ':+1::skin-tone-3:');
 										Message.postChannelMessage(message, updatedTime, updatedTime.inTime, 'Today\'s Tasks', 'msgTs');
 										console.log('-----------------tasks added------------------\n');
 									}).catch((err) => {
@@ -241,7 +240,7 @@ bot.message((message) => {
 						} else if (timesheet.outTime && !timesheet.taskDone) {
 							DB.saveTaskDone(timesheet, task, message.ts)
 								.then((updatedTime) => {
-									Message.postMessage(message, ':thumbsup_all:');
+									Message.postMessage(message, ':+1::skin-tone-3:');
 									Message.postChannelMessage(message, updatedTime, updatedTime.outTime, 'Completed Tasks', 'msgDoneTs');
 									console.log('-----------------taskDone added------------------\n');
 								}).catch((err) => {
@@ -433,6 +432,7 @@ bot.message((message) => {
 							file: fs.createReadStream(`sheets/${timesheet[0].username}.xlsx`),
 						},
 					}, (error, response) => {
+						console.log(error);
 						if (error) log.saveLogs(message.user, err, new Date());
 					});
 				});
