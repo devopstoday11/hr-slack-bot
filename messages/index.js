@@ -4,10 +4,10 @@ const config = require('../config');
 const log = require('../helper/logger');
 
 module.exports = {
-	postSpecificReport: (timesheet, attachment, timePeriod) => {
+	postSpecificReport: (timesheet, attachment, timePeriod, message) => {
 		slack.chat.postMessage({
 			token: config.token,
-			channel: config.postChannelId,
+			channel: message.channel,
 			title: 'Title',
 			text: `${timesheet[0].userRealname} ${timePeriod} Report`,
 			attachments: attachment,

@@ -54,7 +54,7 @@ function specificReport(message, timePeriod, start, end) {
 				attachment.push(attach);
 				i += 1;
 			});
-			Message.postSpecificReport(timesheet, attachment, timePeriod);
+			Message.postSpecificReport(timesheet, attachment, timePeriod, message);
 			attachment = [];
 		});
 	}
