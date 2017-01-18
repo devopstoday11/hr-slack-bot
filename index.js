@@ -59,6 +59,13 @@ function specificReport(message, timePeriod, start, end) {
 		});
 	}
 }
+function testChannel(message) {
+	if(message.channel === config.postChannelId){
+		throw new Error('You can\'t post this message in public channel!!');
+	} else {
+		return true;
+	}
+}
 // do something with the rtm.start payload
 bot.started((payload) => {
 	const payloadUsers = payload.users;
@@ -96,6 +103,7 @@ bot.message((message) => {
 			} else if (message.text.toLowerCase() === 'out' || message.text.toLowerCase().indexOf('out ') === 0) {
 				testCase = 'OUT';
 			} else if (message.text.toLowerCase() === 'week' || message.text.toLowerCase().indexOf('week ') === 0) {
+				testChannel(message);
 				if (message.text.toLowerCase().indexOf('week <@') === 0) {
 					if (_.find(config.admin, (o) => { return o === message.user; })) {
 						testCase = 'WEEK_REPORT';
@@ -106,6 +114,7 @@ bot.message((message) => {
 					testCase = 'WRONG';
 				}
 			} else if (message.text.toLowerCase() === 'month' || message.text.toLowerCase().indexOf('month ') === 0) {
+				testChannel(message);
 				if (message.text.toLowerCase().indexOf('month <@') === 0) {
 					if (_.find(config.admin, (o) => { return o === message.user; })) {
 						testCase = 'MONTH_REPORT';
@@ -118,6 +127,7 @@ bot.message((message) => {
 			} else if (message.text.toLowerCase() === 'help' || message.text.toLowerCase().indexOf('help ') === 0) {
 				testCase = 'HELP';
 			} else if (message.text.toLowerCase() === 'excel' || message.text.toLowerCase().indexOf('excel ') === 0) {
+				testChannel(message);
 				if (message.text.toLowerCase().indexOf('excel <@') === 0) {
 					if (_.find(config.admin, (o) => { return o === message.user; })) {
 						testCase = 'EXCEL';
@@ -132,6 +142,7 @@ bot.message((message) => {
 			}
 		} catch (err) {
 			log.saveLogs(message.user, err, new Date());
+			Message.postErrorMessage(message, err);
 		}
 	} else if (message.subtype === 'message_changed') {
 		if (message.previous_message.text.indexOf('in ') === 0 || message.previous_message.text === 'in' || message.previous_message.text === 'out' || message.previous_message.text.indexOf('out ') === 0) {
@@ -232,7 +243,7 @@ bot.message((message) => {
 							DB.saveTask(timesheet, task, message.ts)
 									.then((updatedTime) => {
 										Message.postMessage(message, ':+1::skin-tone-3:');
-										Message.postChannelMessage(message, updatedTime, updatedTime.inTime, 'Today\'s Tasks', 'msgTs');
+										Message.postChannelMessage(message, updatedTime, updatedTime.inTime, 'Today\'s Tasks', 'msgTs', 'in');
 										console.log('-----------------tasks added------------------\n');
 									}).catch((err) => {
 										log.saveLogs(message.user, err, new Date());
@@ -241,7 +252,7 @@ bot.message((message) => {
 							DB.saveTaskDone(timesheet, task, message.ts)
 								.then((updatedTime) => {
 									Message.postMessage(message, ':+1::skin-tone-3:');
-									Message.postChannelMessage(message, updatedTime, updatedTime.outTime, 'Completed Tasks', 'msgDoneTs');
+									Message.postChannelMessage(message, updatedTime, updatedTime.outTime, 'Completed Tasks', 'msgDoneTs', 'out');
 									console.log('-----------------taskDone added------------------\n');
 								}).catch((err) => {
 									log.saveLogs(message.user, err, new Date());
