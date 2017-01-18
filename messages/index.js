@@ -65,12 +65,12 @@ module.exports = {
 		});
 	},
 
-	postChannelMessage: (message, updatedTime, time, text, param) => {
+	postChannelMessage: (message, updatedTime, time, text, param, inOut) => {
 		slack.chat.postMessage({
 			token: config.token,
 			channel: config.postChannelId,
 			title: 'Title',
-			text: `${updatedTime.userRealname} checked in at ${time} `,
+			text: `${updatedTime.userRealname} checked ${inOut} at ${time} `,
 			attachments: [
 				{
 					color: '#36a64f',
