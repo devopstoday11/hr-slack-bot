@@ -1,9 +1,37 @@
 const slack = require('slack');
 const DB = require('../models');
 const config = require('../config');
+const log = require('../helper/logger');
 
 module.exports = {
-	postMessage: (message, textMessage, tasks = 'Tasks to complete') => {
+	postSpecificReport: (timesheet, attachment, timePeriod, message) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: message.channel,
+			title: 'Title',
+			text: `${timesheet[0].userRealname} ${timePeriod} Report`,
+			attachments: attachment,
+		}, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs(data.message.username, errSave, new Date());
+			}
+		});
+	},
+
+	postMessage: (message, textMessage) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: message.channel,
+			title: 'Title',
+			text: textMessage,
+		}, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs(data.message.username, errSave, new Date());
+			}
+		});
+	},
+
+	postMessageWithAttachment: (message, textMessage, tasks) => {
 		slack.chat.postMessage({
 			token: config.token,
 			channel: message.channel,
@@ -12,26 +40,13 @@ module.exports = {
 			attachments: [{
 				color: '#36a64f',
 				text: `${tasks}`,
-				ts: `${message.ts}`
 			}]
 		}, (errSave, data) => {
 			if (errSave) {
-				console.log('err send', errSave);
+				log.saveLogs(data.message.username, errSave, new Date());
 			}
 		});
 	},
-	// deleteMessage: (message) => {
-	// 	slack.chat.delete({
-	// 		token: config.token,
-	// 		channel: message.channel,
-	// 		ts: message.ts,
-	// 	}, (errSave, data) => {
-	// 		if (errSave) {
-	// 			console.log('err send', errSave);
-	// 		}
-	// 		console.log('delete', data);
-	// 	});
-	// },
 
 	postErrorMessage: (message, error) => {
 		slack.chat.postMessage({
@@ -41,12 +56,11 @@ module.exports = {
 			text: '',
 			attachments: [{
 				color: '#ff0000',
-				text: `${error}`,
-				ts: `${message.ts}`
+				text: `${error.message}`,
 			}]
 		}, (errSave, data) => {
 			if (errSave) {
-				console.log('err error send', errSave);
+				log.saveLogs(data.message.username, errSave, new Date());
 			}
 		});
 	},
@@ -67,12 +81,10 @@ module.exports = {
 				}
 			] }, (errSave, data) => {
 			if (errSave) {
-				console.log(errSave);
+				log.saveLogs(data.message.username, errSave, new Date());
 			}
-			// console.log(data);
 			DB.saveChannelMessageRecord(updatedTime, data.ts, param)
 			.then((dataNew) => {
-				// console.log(dataNew, 'hii');
 				return true;
 			});
 		});
@@ -88,16 +100,15 @@ module.exports = {
 			attachments: [
 				{
 					color: '#36a64f',
-					author_name: `${timesheet.userRealname}}`,
+					author_name: `${timesheet.userRealname}`,
 					title: text,
 					text: `${updatedTask}`,
 					ts: `${timesheet.msgTs}`
 				}
 			] }, (errSave, data) => {
 			if (errSave) {
-				console.log(errSave);
+				log.saveLogs(data.message.username, errSave, new Date());
 			}
-			// return data;
 		});
 	}
 };

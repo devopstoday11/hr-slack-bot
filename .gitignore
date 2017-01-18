@@ -1,4 +1,5 @@
 # Logs
+log
 logs
 *.log
 npm-debug.log*
@@ -35,3 +36,12 @@ jspm_packages
 
 # Optional REPL history
 .node_repl_history
+
+# Config files
+config/index.js
+
+schemas/.DS_Store
+
+sheets
+
+.DS_Store
