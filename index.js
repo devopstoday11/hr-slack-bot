@@ -34,7 +34,7 @@ let attach;
 function specificReport(message, timePeriod, start, end) {
 	try {
 		spaceIndex = message.text.indexOf(' ');
-		if (message.text.substr(0, spaceIndex) === timePeriod) {
+		if (message.text.substr(0, spaceIndex).toLowerCase() === timePeriod) {
 			userId = message.text.substr(spaceIndex + 3, 9);
 		}
 		userTemp = _.find(users, (o) => { return o.id === userId; });
