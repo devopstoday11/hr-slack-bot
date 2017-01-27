@@ -60,7 +60,7 @@ function specificReport(message, timePeriod, start, end) {
 	}
 }
 function testChannel(message) {
-	if(message.channel === config.postChannelId){
+	if (message.channel === config.postChannelId) {
 		throw new Error('You can\'t post this message in public channel!!');
 	} else {
 		return true;
@@ -92,7 +92,7 @@ bot.started((payload) => {
  * }
  */
 bot.message((message) => {
-	// console.log('\n******************************\n', message, '\n******************************\n');
+	//
 	const user = _.find(users, { id: message.user });
 	let testCase = '';
 	if (message.type === 'message' && !message.subtype && !message.bot_id) {
@@ -152,26 +152,21 @@ bot.message((message) => {
 		}
 	}
 	switch (testCase) {
-		case 'IN' : console.log('----------------------- IN -------------------------\n');
+		case 'IN' :
 			DB.getTodayTimesheet(message.user)
 		.then((timesheet) => {
 			if (timesheet) {
-				console.log('----------------------- ALREADY IN -------------------------\n');
 				throw new Error('Already in :unamused:');
 			} else {
-				console.log('----------------------- FIRST TIME IN -------------------------\n');
 				if (message.text.toLowerCase() === 'in') {
 					time = moment().format('HH:mm');
-					console.log('----------------------- NO TIME -------------------------\n');
 				} else {
-					console.log('----------------------- WITH TIME -------------------------\n');
 					spaceIndex = message.text.indexOf(' ');
 					if (message.text.substr(0, spaceIndex) === 'in') {
 						time = message.text.substr(spaceIndex + 1);
 						if (timeRegex.test(time)) {
-							console.log('----------------------- VALID TIME -------------------------\n');
+
 						} else {
-							console.log('----------------------- INVALID TIME -------------------------\n');
 							throw new Error('Please enter valid time in HH:MM format.\nOnly one space is allowed after IN/OUT  ... :face_with_rolling_eyes:');
 						}
 					} else {
@@ -180,7 +175,6 @@ bot.message((message) => {
 				}
 				DB.saveTimesheet(user, time)
 				.then((data) => {
-					console.log('----------------------- USER IS IN -------------------------\n');
 					return true;
 				})
 				.catch((err) => {
@@ -196,34 +190,27 @@ bot.message((message) => {
 		});
 			break;
 		case 'OUT':
-			console.log('----------------------- OUT -------------------------\n');
+
 			DB.getTodayTimesheet(message.user)
 			.then((timesheet) => {
 				if (!timesheet) {
-					console.log('----------------------- NOT IN -------------------------\n');
 					throw new Error('Not in');
 				} else if (timesheet.outTime !== null) {
-					console.log('----------------------- ALREADY OUT -------------------------\n');
 					throw new Error('Already Out :unamused:');
 				} else {
-					console.log('----------------------- FIRST TIME OUT -------------------------\n');
 					if (message.text.toLowerCase() === 'out') {
 						time = moment().format('HH:mm');
-						console.log('----------------------- NO TIME -------------------------\n');
 					} else {
-						console.log('----------------------- WITH TIME -------------------------\n');
 						spaceIndex = message.text.indexOf(' ');
 						time = message.text.substr(spaceIndex + 1);
 						if (timeRegex.test(time)) {
-							console.log('----------------------- VALID TIME -------------------------\n');
+
 						} else {
-							console.log('----------------------- INVALID TIME -------------------------\n');
 							throw new Error('Please enter valid time in HH:MM format ... :face_with_rolling_eyes: ');
 						}
 					}
 					DB.outUser(timesheet, time)
 						.then((data) => {
-							console.log('----------------------- USER IS OUT -------------------------\n');
 							return true;
 						}).then(() => {
 							Message.postMessageWithAttachment(message, '\nWhich of the below tasks you have completed today?\n', timesheet.tasks);
@@ -244,7 +231,6 @@ bot.message((message) => {
 									.then((updatedTime) => {
 										Message.postMessage(message, ':+1::skin-tone-3:');
 										Message.postChannelMessage(message, updatedTime, updatedTime.inTime, 'Today\'s Tasks', 'msgTs', 'in');
-										console.log('-----------------tasks added------------------\n');
 									}).catch((err) => {
 										log.saveLogs(message.user, err, new Date());
 									});
@@ -253,16 +239,13 @@ bot.message((message) => {
 								.then((updatedTime) => {
 									Message.postMessage(message, ':+1::skin-tone-3:');
 									Message.postChannelMessage(message, updatedTime, updatedTime.outTime, 'Completed Tasks', 'msgDoneTs', 'out');
-									console.log('-----------------taskDone added------------------\n');
 								}).catch((err) => {
 									log.saveLogs(message.user, err, new Date());
 								});
 						} else {
-							console.log('--------------USER HAS ALREADY ADDED TASKS,CAN\'T ADD MORE-----------');
 							throw new Error('Wrong Command!! :sweat_smile: \n\nYou have already added tasks\nYou can\'t add more tasks,You can still edit old ones! :wink: ');
 						}
 					} else {
-						console.log('--------------USER IS NOT IN------------');
 						throw new Error('User is not in :face_with_rolling_eyes: ');
 					}
 				}).catch((err) => {
@@ -277,15 +260,11 @@ bot.message((message) => {
 							DB.saveTask(timesheet, message.message.text, timesheet.taskTs)
 							.then(() => {
 								Message.updateChannelMessage(timesheet, timesheet.msgTs, message.message.text, 'Today\'s Tasks');
-								console.log('----------------TASK MESSAGE EDITED----------------\n');
-								console.log('----------------CHANNEL MESSAGE EDITED----------------\n');
 							});
 						} else if (message.previous_message.ts === timesheet.taskDoneTs) {
 							DB.saveTaskDone(timesheet, message.message.text, timesheet.taskDoneTs)
 							.then(() => {
 								Message.updateChannelMessage(timesheet, timesheet.msgDoneTs, message.message.text, 'Today\'s Tasks');
-								console.log('----------------CHANNEL MESSAGE EDITED----------------\n');
-								console.log('----------------TASK DONE MESSAGE EDITED----------------\n');
 							});
 						}
 					});
@@ -305,11 +284,11 @@ bot.message((message) => {
 			'EXCEL @user : to get Excel sheet of all the data of @user.\n\n' +
 			'Only one space is allowed between WEEK,MONTH,EXCEL,IN,OUT and @user/Time !!';
 			Message.postErrorMessage(message, new Error(commands));
-			console.log('-----------EDITED OTHER MESSAGE------------');
+
 			break;
 		case 'NOTHING_TO_DO':
 			Message.postErrorMessage(message, new Error('You can only edit task description messages! :sweat_smile:'));
-			console.log('-----------EDITED OTHER MESSAGE------------');
+
 			break;
 		case 'WRONG':
 			Message.postErrorMessage(message, new Error('Wrong command! :joy: \nInstructions: :sweat_smile: \nType correct username. :sunglasses: \nOnly one space should be there after "month"/"week"\n\ne.g week @slackbot\n  month @slackbot'));
@@ -443,7 +422,6 @@ bot.message((message) => {
 							file: fs.createReadStream(`sheets/${timesheet[0].username}.xlsx`),
 						},
 					}, (error, response) => {
-						console.log(error);
 						if (error) log.saveLogs(message.user, err, new Date());
 					});
 				});
