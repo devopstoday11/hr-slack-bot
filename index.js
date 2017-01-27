@@ -32,31 +32,35 @@ let attachment = [];
 let attach;
 
 function specificReport(message, timePeriod, start, end) {
-	spaceIndex = message.text.indexOf(' ');
-	if (message.text.substr(0, spaceIndex) === timePeriod) {
-		userId = message.text.substr(spaceIndex + 3, 9);
-	}
-	userTemp = _.find(users, (o) => { return o.id === userId; });
-	if (userTemp.id !== userId) {
-		Message.postErrorMessage(message, new Error('USER NOT FOUND'));
-	} else {
-		DB.getSpecificTimesheet(userId, start, end)
-		.then((timesheet) => {
-			let i = 0;
-			timesheet.forEach((t, index) => {
-				const colorCode = ['#0000FF', '#36a64f', '#cc0066', '#808000', '#b33c00', '#00cccc', '#669900'];
-				attach = {
-					color: colorCode[i % 6],
-					title: `${moment(t.createdAt).format('DD-MM-YYYY')}`,
-					text: `check in time : ${t.inTime} \ncheck out time : ${t.outTime}\n\nTasks planned : \n${t.tasks} \n\nCompleted task: \n${t.taskDone}  `,
-					ts: `${t.taskDone}`
-				};
-				attachment.push(attach);
-				i += 1;
+	try {
+		spaceIndex = message.text.indexOf(' ');
+		if (message.text.substr(0, spaceIndex) === timePeriod) {
+			userId = message.text.substr(spaceIndex + 3, 9);
+		}
+		userTemp = _.find(users, (o) => { return o.id === userId; });
+		if (userTemp.id !== userId) {
+			Message.postErrorMessage(message, new Error('USER NOT FOUND'));
+		} else {
+			DB.getSpecificTimesheet(userId, start, end)
+			.then((timesheet) => {
+				let i = 0;
+				timesheet.forEach((t, index) => {
+					const colorCode = ['#0000FF', '#36a64f', '#cc0066', '#808000', '#b33c00', '#00cccc', '#669900'];
+					attach = {
+						color: colorCode[i % 6],
+						title: `${moment(t.createdAt).format('DD-MM-YYYY')}`,
+						text: `check in time : ${t.inTime} \ncheck out time : ${t.outTime}\n\nTasks planned : \n${t.tasks} \n\nCompleted task: \n${t.taskDone}  `,
+						ts: `${t.taskDone}`
+					};
+					attachment.push(attach);
+					i += 1;
+				});
+				Message.postSpecificReport(timesheet, attachment, timePeriod, message);
+				attachment = [];
 			});
-			Message.postSpecificReport(timesheet, attachment, timePeriod, message);
-			attachment = [];
-		});
+		}
+	} catch (e) {
+		log.saveLogs(message.user, e, new Date());
 	}
 }
 function testChannel(message) {
@@ -92,7 +96,6 @@ bot.started((payload) => {
  * }
  */
 bot.message((message) => {
-	//
 	const user = _.find(users, { id: message.user });
 	let testCase = '';
 	if (message.type === 'message' && !message.subtype && !message.bot_id) {
@@ -164,9 +167,7 @@ bot.message((message) => {
 					spaceIndex = message.text.indexOf(' ');
 					if (message.text.substr(0, spaceIndex) === 'in') {
 						time = message.text.substr(spaceIndex + 1);
-						if (timeRegex.test(time)) {
-
-						} else {
+						if (!timeRegex.test(time)) {
 							throw new Error('Please enter valid time in HH:MM format.\nOnly one space is allowed after IN/OUT  ... :face_with_rolling_eyes:');
 						}
 					} else {
@@ -204,7 +205,7 @@ bot.message((message) => {
 						spaceIndex = message.text.indexOf(' ');
 						time = message.text.substr(spaceIndex + 1);
 						if (timeRegex.test(time)) {
-
+							//
 						} else {
 							throw new Error('Please enter valid time in HH:MM format ... :face_with_rolling_eyes: ');
 						}
@@ -279,9 +280,9 @@ bot.message((message) => {
 			commands = 'List Of Commands :point_down: \nIN/IN HH:MM : when you start the work. :walking:  \n' +
 			'OUT/OUT HH:MM : when you leave. :v: ' +
 			'\n\nYou can enter the tasks only one time, after that, you can only edit that message. :thumbsup_all: \n\n\n' +
-			'Only for HR :grin: : \nWEEK @user : To get last week timesheet of @user.\n' +
-			'MONTH @user : to get last month activities of @user.\n' +
-			'EXCEL @user : to get Excel sheet of all the data of @user.\n\n' +
+			'Only for HR :grin: : \nweek @user : To get last week timesheet of @user.\n' +
+			'month @user : to get last month activities of @user.\n' +
+			'excel @user : to get Excel sheet of all the data of @user.\n\n' +
 			'Only one space is allowed between WEEK,MONTH,EXCEL,IN,OUT and @user/Time !!';
 			Message.postErrorMessage(message, new Error(commands));
 
