@@ -3,6 +3,7 @@ const slack = require('slack');
 const config = require('./config');
 const mongoose = require('mongoose');
 const UserMdl = require('./schemas/user');
+const ImsMdl = require('./schemas/ims');
 const TimeMdl = require('./schemas/timesheet');
 const DB = require('./models');
 const Message = require('./messages');
@@ -72,7 +73,9 @@ function testChannel(message) {
 }
 // do something with the rtm.start payload
 bot.started((payload) => {
+	// console.log(payload);
 	const payloadUsers = payload.users;
+	const payloadIms = payload.ims;
 	payloadUsers.forEach((user) => {
 		if (!user.is_bot && user.name !== 'slackbot') {
 			const dbUser = new UserMdl(user);
@@ -80,6 +83,16 @@ bot.started((payload) => {
 			UserMdl.update({ id: user.id }, user, { upsert: true, setDefaultsOnInsert: true }, (err, result) => {
 			});
 		}
+	});
+	payloadIms.forEach((ims) => {
+		const newIms = {
+			userId: ims.user,
+			channelId: ims.id
+		};
+		const imsAdd = new ImsMdl(newIms);
+		imsAdd.save((err, resp) => {
+			if (err) log.saveLogs(resp.userid, err, new Date());
+		});
 	});
 });
 
@@ -96,6 +109,7 @@ bot.started((payload) => {
  * }
  */
 bot.message((message) => {
+	console.log(message);
 	const user = _.find(users, { id: message.user });
 	let testCase = '';
 	if (message.type === 'message' && !message.subtype && !message.bot_id) {
