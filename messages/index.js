@@ -9,7 +9,7 @@ module.exports = {
 			token: config.token,
 			channel: message.channel,
 			title: 'Title',
-			text: `${timesheet[0].userRealname} ${timePeriod} Report`,
+			text: `*${timesheet[0].userRealname} ${timePeriod} Report*`,
 			attachments: attachment,
 		}, (errSave, data) => {
 			if (errSave) {
@@ -23,7 +23,7 @@ module.exports = {
 			token: config.token,
 			channel: message.channel,
 			title: 'Title',
-			text: textMessage,
+			text: `${textMessage}`,
 		}, (errSave, data) => {
 			if (errSave) {
 				log.saveLogs(data.message.username, errSave, new Date());
@@ -70,7 +70,7 @@ module.exports = {
 			token: config.token,
 			channel: config.postChannelId,
 			title: 'Title',
-			text: `${updatedTime.userRealname} checked ${inOut} at ${time} `,
+			text: `*${updatedTime.userRealname} checked ${inOut} at* \`${time}\` `,
 			attachments: [
 				{
 					color: '#36a64f',
