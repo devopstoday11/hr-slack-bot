@@ -62,7 +62,6 @@ const userCheckIn = new CronJob({
 	cronTime: '0 0 9,18 * * 1-6',
 	// cronTime: '*/10 * * * * *',
 	onTick() {
-		console.log(moment().format('HH:mm'));
 		let text = '';
 		if (moment().format('HH').toString() === '09') {
 			text = 'let\'s check you in.\n proceed by entering `in` command';
@@ -77,7 +76,7 @@ const userCheckIn = new CronJob({
 				text,
 			}, (errSave, data) => {
 				if (errSave) {
-					console.log(errSave);
+					log.saveLogs('Cron JOB', errSave, new Date());
 				}
 			});
 		});
@@ -99,7 +98,6 @@ const userCheckIn = new CronJob({
  * }
  */
 bot.message((message) => {
-	console.log(message);
 	if (message.channel !== config.postChannelId) {
 		const user = _.find(users, { id: message.user });
 		let testCase = '';
@@ -161,7 +159,10 @@ bot.message((message) => {
 				DB.getTodayTimesheet(message.user)
 			.then((timesheet) => {
 				if (timesheet) {
-					throw new Error('Already in :unamused:');
+					if (timesheet.outTime) {
+						throw new Error('Seems like you already left office cya tommorow:wink:');
+					}
+					throw new Error('You have already checked in so please concentrate on your work :wink::unamused:');
 				} else {
 					if (message.text.toLowerCase() === 'in') {
 						time = moment().format('HH:mm');
@@ -170,10 +171,10 @@ bot.message((message) => {
 						if (message.text.substr(0, spaceIndex) === 'in') {
 							time = message.text.substr(spaceIndex + 1);
 							if (!timeRegex.test(time)) {
-								throw new Error('Please enter valid time in HH:MM format.\nOnly one space is allowed after IN/OUT  ... :face_with_rolling_eyes:');
+								throw new Error('Please enter valid time in HH:MM format.\nThe 24-hour clock was developed by ancient Egyptians, So please don\'t disrespect them and please enter valid time');
 							}
 						} else {
-							throw new Error('Invalid time');
+							throw new Error('Invalid Command');
 						}
 					}
 					DB.saveTimesheet(user, time)
@@ -186,12 +187,13 @@ bot.message((message) => {
 					});
 				}
 			}).then(() => {
-				Message.postMessage(message, 'What are the tasks you are going to complete today?');
+				Message.postMessage(message, 'What are the tasks that you are going to perform today?');
 			}).catch((err) => {
 				log.saveLogs(message.user, err, new Date());
 				Message.postErrorMessage(message, err);
 			});
 				break;
+
 			case 'OUT':
 
 				DB.getTodayTimesheet(message.user)
@@ -199,7 +201,7 @@ bot.message((message) => {
 					if (!timesheet) {
 						throw new Error('Not in');
 					} else if (timesheet.outTime !== null) {
-						throw new Error('Already Out :unamused:');
+						throw new Error('Seems like you already left office cya tommorow:wink:');
 					} else {
 						if (message.text.toLowerCase() === 'out') {
 							time = moment().format('HH:mm');
@@ -209,7 +211,7 @@ bot.message((message) => {
 							if (timeRegex.test(time)) {
 								//
 							} else {
-								throw new Error('Please enter valid time in HH:MM format ... :face_with_rolling_eyes: ');
+								throw new Error('Invalid time format, Its `HH:MM` so please be kind in entering valid time and save your time and ours too ...  ');
 							}
 						}
 						DB.outUser(timesheet, time)
@@ -232,7 +234,7 @@ bot.message((message) => {
 							if (!timesheet.outTime && !timesheet.tasks) {
 								DB.saveTask(timesheet, task, message.ts)
 										.then((updatedTime) => {
-											Message.postMessage(message, ':+1::skin-tone-3:');
+											Message.postMessage(message, `You have successfully checked in and your tasks are posted in <#${config.postChannelId}>`);
 											Message.postChannelMessage(message, updatedTime, updatedTime.inTime, 'Today\'s Tasks', 'msgTs', 'in');
 										}).catch((err) => {
 											log.saveLogs(message.user, err, new Date());
@@ -240,16 +242,16 @@ bot.message((message) => {
 							} else if (timesheet.outTime && !timesheet.taskDone) {
 								DB.saveTaskDone(timesheet, task, message.ts)
 									.then((updatedTime) => {
-										Message.postMessage(message, ':+1::skin-tone-3:');
+										Message.postMessage(message, `You have successfully checked out and your completed tasks are posted in <#${config.postChannelId}>`);
 										Message.postChannelMessage(message, updatedTime, updatedTime.outTime, 'Completed Tasks', 'msgDoneTs', 'out');
 									}).catch((err) => {
 										log.saveLogs(message.user, err, new Date());
 									});
 							} else {
-								throw new Error('Wrong Command!! :sweat_smile: \n\nYou have already added tasks\nYou can\'t add more tasks,You can still edit old ones! :wink: ');
+								throw new Error('You confused me :sweat_smile: \n\n You have already added tasks\nso can\'t add more tasks but if you have changed your moind or something came up then please edit old task message :wink: ');
 							}
 						} else {
-							throw new Error('User is not in :face_with_rolling_eyes: ');
+							throw new Error('You first need to enter in the office to start conversation:wink: ');
 						}
 					}).catch((err) => {
 						log.saveLogs(message.user, err, new Date());
@@ -279,25 +281,25 @@ bot.message((message) => {
 				specificReport(message, 'month', 1, 30);
 				break;
 			case 'HELP':
-				commands = 'List Of Commands :point_down: \nIN/IN HH:MM : when you start the work. :walking:  \n' +
-				'OUT/OUT HH:MM : when you leave. :v: ' +
-				'\n\nYou can enter the tasks only one time, after that, you can only edit that message. :thumbsup_all: \n\n\n' +
-				'Only for HR :grin: : \nweek @user : To get last week timesheet of @user.\n' +
-				'month @user : to get last month activities of @user.\n' +
-				'excel @user : to get Excel sheet of all the data of @user.\n\n' +
-				'Only one space is allowed between WEEK,MONTH,EXCEL,IN,OUT and @user/Time !!';
-				Message.postErrorMessage(message, new Error(commands));
+				// commands = 'List Of Commands :point_down: \nIN/IN HH:MM : when you start the work. :walking:  \n' +
+				// 'OUT/OUT HH:MM : when you leave. :v: ' +
+				// '\n\nYou can enter the tasks only one time, after that, you can only edit that message. :thumbsup_all: \n\n\n' +
+				// 'Only for HR :grin: : \nweek @user : To get last week timesheet of @user.\n' +
+				// 'month @user : to get last month activities of @user.\n' +
+				// 'excel @user : to get Excel sheet of all the data of @user.\n\n' +
+				// 'Only one space is allowed between WEEK,MONTH,EXCEL,IN,OUT and @user/Time !!';
+				Message.postHelpMessage(message);
 
 				break;
 			case 'NOTHING_TO_DO':
-				Message.postErrorMessage(message, new Error('You can only edit task description messages! :sweat_smile:'));
+				Message.postErrorMessage(message, new Error('You can only edit task listing messages! :sweat_smile:'));
 
 				break;
 			case 'WRONG':
-				Message.postErrorMessage(message, new Error('Wrong command! :joy: \nInstructions: :sweat_smile: \nType correct username. :sunglasses: \nOnly one space should be there after "month"/"week"\n\ne.g week @slackbot\n  month @slackbot'));
+				Message.postErrorMessage(message, new Error(':joy: \nInstructions: :sweat_smile: \nType correct username. :sunglasses: \nOnly one space should be there after "month"/"week"\n\ne.g week @slackbot\n  month @slackbot'));
 				break;
 			case 'UNAUTHORIZED':
-				Message.postErrorMessage(message, new Error('\nYou are not having permission to access user data!! :rage:'));
+				Message.postErrorMessage(message, new Error('\nNo No No !!! It\'s Rescricted area ....!! :rage:'));
 				break;
 			case 'EXCEL':
 				try {
