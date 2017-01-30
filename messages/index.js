@@ -9,6 +9,7 @@ module.exports = {
 			token: config.token,
 			channel: message.channel,
 			title: 'Title',
+			fallback: `*${timesheet[0].userRealname} ${timePeriod} Report*`,
 			text: `*${timesheet[0].userRealname} ${timePeriod} Report*`,
 			attachments: attachment,
 		}, (errSave, data) => {
@@ -23,7 +24,8 @@ module.exports = {
 			token: config.token,
 			channel: message.channel,
 			title: 'Title',
-			text: `${textMessage}`
+			text: `${textMessage}`,
+			fallback: `${textMessage}`
 		}, (errSave, data) => {
 			if (errSave) {
 				log.saveLogs(data.message.username, errSave, new Date());
@@ -37,6 +39,7 @@ module.exports = {
 			channel: message.channel,
 			title: 'Title',
 			text: textMessage,
+			fallback: textMessage,
 			attachments: [{
 				color: '#36a64f',
 				text: `${tasks}`,
@@ -54,6 +57,7 @@ module.exports = {
 			channel: message.channel,
 			title: 'Title',
 			text: '',
+			fallback: `${error.message}`,
 			attachments: [{
 				color: '#ff0000',
 				text: `${error.message}`,
@@ -70,6 +74,7 @@ module.exports = {
 			token: config.token,
 			channel: config.postChannelId,
 			title: 'Title',
+			fallback: `${updatedTime.userRealname} checked ${inOut} at ${time} `,
 			text: `*${updatedTime.userRealname} checked ${inOut} at* \`${time}\` `,
 			attachments: [
 				{
@@ -97,6 +102,7 @@ module.exports = {
 			ts: oldTs,
 			title: 'Title',
 			text: `${timesheet.userRealname} checked in at ${timesheet.inTime} `,
+			fallback: `${timesheet.userRealname} checked in at ${timesheet.inTime} `,
 			attachments: [
 				{
 					color: '#36a64f',
@@ -110,5 +116,37 @@ module.exports = {
 				log.saveLogs(data.message.username, errSave, new Date());
 			}
 		});
-	}
+	},
+
+	postHelpMessage: (message, error) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: message.channel,
+			title: 'HELP DESK',
+			fallback: 'HELP DESK',
+			text: 'Alway ready to help',
+			attachments: [
+				{
+					fallback: 'IN',
+					color: '#36a64f',
+					pretext: 'Entering in the office',
+					author_name: 'Command',
+					title: 'IN / IN HH:MM',
+					text: 'If you are entering in command and want to keep in time as the current time then enter only IN and if you want to change in time than current time then please provide  time in HH:MM formate after IN'
+				},
+				{
+					fallback: 'OUT',
+					color: '#0000ff',
+					pretext: 'While Leaving in the office',
+					author_name: 'Command',
+					title: 'OUT / OUT HH:MM',
+					text: 'Timing rules are same as IN command'
+				}
+			]
+		}, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs(data.message.username, errSave, new Date());
+			}
+		});
+	},
 };
