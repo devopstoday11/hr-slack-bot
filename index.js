@@ -59,22 +59,28 @@ bot.started((payload) => {
 	// });
 });
 const userCheckIn = new CronJob({
-	cronTime: '0 0 9 * * 1-6',
-	// cronTime: */10 * * * * *',
+	cronTime: '0 0 9,18 * * 1-6',
+	// cronTime: '*/10 * * * * *',
 	onTick() {
+		console.log(moment().format('HH:mm'));
+		let text = '';
+		if (moment().format('HH').toString() === '09') {
+			text = 'let\'s check you in.\n proceed by entering `in` command';
+		} else {
+			text = 'Don\'t forget to checkout when you leave the office by entering `out` command';
+		}
 		payloadIms.forEach((ims) => {
 			slack.chat.postMessage({
 				token: config.token,
 				channel: ims.id,
 				title: 'Title',
-				text: 'let\'s check you in, proceed by entering in command',
+				text,
 			}, (errSave, data) => {
 				if (errSave) {
 					console.log(errSave);
 				}
 			});
 		});
-		// });
 	},
 	start: false,
 	timeZone: 'Asia/Kolkata'
@@ -105,7 +111,6 @@ bot.message((message) => {
 				} else if (message.text.toLowerCase() === 'out' || message.text.toLowerCase().indexOf('out ') === 0) {
 					testCase = 'OUT';
 				} else if (message.text.toLowerCase() === 'week' || message.text.toLowerCase().indexOf('week ') === 0) {
-					testChannel(message);
 					if (message.text.toLowerCase().indexOf('week <@') === 0) {
 						if (_.find(config.admin, (o) => { return o === message.user; })) {
 							testCase = 'WEEK_REPORT';
@@ -116,7 +121,6 @@ bot.message((message) => {
 						testCase = 'WRONG';
 					}
 				} else if (message.text.toLowerCase() === 'month' || message.text.toLowerCase().indexOf('month ') === 0) {
-					testChannel(message);
 					if (message.text.toLowerCase().indexOf('month <@') === 0) {
 						if (_.find(config.admin, (o) => { return o === message.user; })) {
 							testCase = 'MONTH_REPORT';
@@ -129,7 +133,6 @@ bot.message((message) => {
 				} else if (message.text.toLowerCase() === 'help' || message.text.toLowerCase().indexOf('help ') === 0) {
 					testCase = 'HELP';
 				} else if (message.text.toLowerCase() === 'excel' || message.text.toLowerCase().indexOf('excel ') === 0) {
-					testChannel(message);
 					if (message.text.toLowerCase().indexOf('excel <@') === 0) {
 						if (_.find(config.admin, (o) => { return o === message.user; })) {
 							testCase = 'EXCEL';
@@ -470,13 +473,6 @@ function specificReport(message, timePeriod, start, end) {
 		}
 	} catch (e) {
 		log.saveLogs(message.user, e, new Date());
-	}
-}
-function testChannel(message) {
-	if (message.channel === config.postChannelId) {
-		throw new Error('You can\'t post this message in public channel!!');
-	} else {
-		return true;
 	}
 }
 
