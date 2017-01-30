@@ -248,7 +248,7 @@ bot.message((message) => {
 										log.saveLogs(message.user, err, new Date());
 									});
 							} else {
-								throw new Error('You confused me :sweat_smile: \n\n You have already added tasks\nso can\'t add more tasks but if you have changed your moind or something came up then please edit old task message :wink: ');
+								throw new Error('You confused me :sweat_smile: \n\n You have already added tasks\nso can\'t add more tasks but if you have changed your mind or something came up then please edit old task message :wink: ');
 							}
 						} else {
 							throw new Error('You first need to enter in the office to start conversation:wink: ');
