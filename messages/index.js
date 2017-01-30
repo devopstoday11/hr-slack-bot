@@ -23,7 +23,7 @@ module.exports = {
 			token: config.token,
 			channel: message.channel,
 			title: 'Title',
-			text: `${textMessage}`,
+			text: `${textMessage}`
 		}, (errSave, data) => {
 			if (errSave) {
 				log.saveLogs(data.message.username, errSave, new Date());

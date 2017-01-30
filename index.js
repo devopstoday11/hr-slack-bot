@@ -13,6 +13,7 @@ const excel = require('node-excel-export');
 const fs = require('fs');
 const request = require('request');
 const log = require('./helper/logger');
+const CronJob = require('cron').CronJob;
 
 const temp = [];
 
@@ -31,12 +32,11 @@ let userTemp;
 let	commands;
 let attachment = [];
 let attach;
-
+let payloadIms;
 // do something with the rtm.start payload
 bot.started((payload) => {
-	// console.log(payload);
 	const payloadUsers = payload.users;
-	const payloadIms = payload.ims;
+	payloadIms = payload.ims;
 	payloadUsers.forEach((user) => {
 		if (!user.is_bot && user.name !== 'slackbot') {
 			const dbUser = new UserMdl(user);
@@ -45,16 +45,39 @@ bot.started((payload) => {
 			});
 		}
 	});
-	payloadIms.forEach((ims) => {
-		const newIms = {
-			userId: ims.user,
-			channelId: ims.id
-		};
-		const imsAdd = new ImsMdl(newIms);
-		imsAdd.save((err, resp) => {
-			if (err) log.saveLogs(resp.userid, err, new Date());
+	// store ims of each user, to send messages at every 9:00 AM
+	// direct sending messages using IMS array,so ims schema is not required
+	// payloadIms.forEach((ims) => {
+	// 	const newIms = {
+	// 		userId: ims.user,
+	// 		channelId: ims.id
+	// 	};
+	// 	const imsAdd = new ImsMdl(newIms);
+	// 	imsAdd.save((err, resp) => {
+	// 		if (err) log.saveLogs(resp.userid, err, new Date());
+	// 	});
+	// });
+});
+const userCheckIn = new CronJob({
+	cronTime: '0 0 9 * * 1-6',
+	// cronTime: */10 * * * * *',
+	onTick() {
+		payloadIms.forEach((ims) => {
+			slack.chat.postMessage({
+				token: config.token,
+				channel: ims.id,
+				title: 'Title',
+				text: 'let\'s check you in, proceed by entering in command',
+			}, (errSave, data) => {
+				if (errSave) {
+					console.log(errSave);
+				}
+			});
 		});
-	});
+		// });
+	},
+	start: false,
+	timeZone: 'Asia/Kolkata'
 });
 
 /**
@@ -458,3 +481,5 @@ function testChannel(message) {
 }
 
 bot.listen({ token });
+
+userCheckIn.start();
