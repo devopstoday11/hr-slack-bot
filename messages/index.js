@@ -84,7 +84,7 @@ module.exports = {
 			attachments: [
 				{
 					color: '#36a64f',
-					fallback: `${updatedTime.userRealname} checked in at ${updatedTime.outTime} `,
+					fallback: `${updatedTime.userRealname} checked in at ${updatedTime.inTime} `,
 					author_name: `${updatedTime.userRealname}`,
 					title: 'Today\'s Tasks',
 					text: `${message.text}`,
@@ -110,13 +110,13 @@ module.exports = {
 			attachments: [
 				{
 					color: '#36a64f',
-					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.inTime} `,
+					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime} `,
 					title: 'Planned Tasks',
 					text: `${updatedTime.tasks}`,
 					ts: `${updatedTime.taskTs}`
 				},
 				{
-					color: '#808000',
+					color: '#36a64f',
 					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime} `,
 					title: 'Completed Tasks',
 					text: `${message.text}`,
@@ -162,12 +162,12 @@ module.exports = {
 			channel: config.postChannelId,
 			ts: oldTs,
 			title: 'Title',
-			text: `*${timesheet.userRealname}* checked out at \`${timesheet.inTime}\` `,
+			text: `*${timesheet.userRealname}* checked out at \`${timesheet.outTime}\` `,
 			as_user: true,
-			fallback: `${timesheet.userRealname} checked out at ${timesheet.inTime} `,
+			fallback: `${timesheet.userRealname} checked out at ${timesheet.outTime} `,
 			attachments: [
 				{
-					color: '#808000',
+					color: '#ff4d4d',
 					title: 'Planned Tasks',
 					text: `${updateInTask}`,
 					ts: `${timesheet.msgTs}`
