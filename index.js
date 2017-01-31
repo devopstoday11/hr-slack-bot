@@ -54,12 +54,12 @@ bot.started((payload) => {
 	// 	};
 	// 	const imsAdd = new ImsMdl(newIms);
 	// 	imsAdd.save((err, resp) => {
-	// 		if (err) log.saveLogs(resp.userid, err, new Date());
+	// 		if (err) log.saveLogs(resp.userid, err, moment());
 	// 	});
 	// });
 });
 const userCheckIn = new CronJob({
-	cronTime: '0 0 9,18 * * 1-6',
+	cronTime: '0 30 8,18 * * 1-6',
 	// cronTime: '*/10 * * * * *',
 	onTick() {
 		let text = '';
@@ -76,7 +76,7 @@ const userCheckIn = new CronJob({
 				text,
 			}, (errSave, data) => {
 				if (errSave) {
-					log.saveLogs('Cron JOB', errSave, new Date());
+					log.saveLogs('Cron JOB', errSave, moment());
 				}
 			});
 		});
@@ -144,7 +144,7 @@ bot.message((message) => {
 					testCase = 'TASK_IN_OUT';
 				}
 			} catch (err) {
-				log.saveLogs(message.user, err, new Date());
+				log.saveLogs(message.user, err, moment());
 				Message.postErrorMessage(message, err);
 			}
 		} else if (message.subtype === 'message_changed') {
@@ -182,14 +182,14 @@ bot.message((message) => {
 						return true;
 					})
 					.catch((err) => {
-						log.saveLogs(message.user, err, new Date());
+						log.saveLogs(message.user, err, moment());
 						Message.postErrorMessage(message, err);
 					});
 				}
 			}).then(() => {
 				Message.postMessage(message, 'What are the tasks that you are going to perform today?');
 			}).catch((err) => {
-				log.saveLogs(message.user, err, new Date());
+				log.saveLogs(message.user, err, moment());
 				Message.postErrorMessage(message, err);
 			});
 				break;
@@ -222,7 +222,7 @@ bot.message((message) => {
 							});
 					}
 				}).catch((err) => {
-					log.saveLogs(message.user, err, new Date());
+					log.saveLogs(message.user, err, moment());
 					Message.postErrorMessage(message, err);
 				});
 				break;
@@ -234,27 +234,27 @@ bot.message((message) => {
 							if (!timesheet.outTime && !timesheet.tasks) {
 								DB.saveTask(timesheet, task, message.ts)
 										.then((updatedTime) => {
-											Message.postMessage(message, `You have successfully checked in and your tasks are posted in <#${config.postChannelId}>`);
-											Message.postChannelMessage(message, updatedTime, updatedTime.inTime, 'Today\'s Tasks', 'msgTs', 'in');
+											Message.postMessage(message, 'You have successfully checked in and your tasks are posted in `daily-scrum`');
+											Message.postChannelInMessage(message, updatedTime, 'msgTs');
 										}).catch((err) => {
-											log.saveLogs(message.user, err, new Date());
+											log.saveLogs(message.user, err, moment());
 										});
 							} else if (timesheet.outTime && !timesheet.taskDone) {
 								DB.saveTaskDone(timesheet, task, message.ts)
 									.then((updatedTime) => {
 										Message.postMessage(message, `You have successfully checked out and your completed tasks are posted in <#${config.postChannelId}>`);
-										Message.postChannelMessage(message, updatedTime, updatedTime.outTime, 'Completed Tasks', 'msgDoneTs', 'out');
+										Message.postChannelOutMessage(message, updatedTime, 'msgDoneTs');
 									}).catch((err) => {
-										log.saveLogs(message.user, err, new Date());
+										log.saveLogs(message.user, err, moment());
 									});
 							} else {
-								throw new Error('You confused me :sweat_smile: \n\n You have already added tasks\nso can\'t add more tasks but if you have changed your moind or something came up then please edit old task message :wink: ');
+								throw new Error('You confused me :sweat_smile: \n\n You have already added tasks\nso can\'t add more tasks but if you have changed your mind or something came up then please edit old task message :wink: ');
 							}
 						} else {
 							throw new Error('You first need to enter in the office to start conversation:wink: ');
 						}
 					}).catch((err) => {
-						log.saveLogs(message.user, err, new Date());
+						log.saveLogs(message.user, err, moment());
 						Message.postErrorMessage(message, err);
 					});
 				break;
@@ -264,12 +264,12 @@ bot.message((message) => {
 							if (message.previous_message.ts === timesheet.taskTs) {
 								DB.saveTask(timesheet, message.message.text, timesheet.taskTs)
 								.then(() => {
-									Message.updateChannelMessage(timesheet, timesheet.msgTs, message.message.text, 'Today\'s Tasks');
+									Message.updateChannelInMessage(timesheet, timesheet.msgTs, message.message.text);
 								});
 							} else if (message.previous_message.ts === timesheet.taskDoneTs) {
 								DB.saveTaskDone(timesheet, message.message.text, timesheet.taskDoneTs)
 								.then(() => {
-									Message.updateChannelMessage(timesheet, timesheet.msgDoneTs, message.message.text, 'Today\'s Tasks');
+									Message.updateChannelOutMessage(timesheet, timesheet.msgDoneTs, message.message.text);
 								});
 							}
 						});
@@ -415,7 +415,7 @@ bot.message((message) => {
 						]
 					);
 					fs.writeFile(`sheets/${timesheet[0].username}.xlsx`, report, (res, err) => {
-						if (err) log.saveLogs(message.user, err, new Date());
+						if (err) log.saveLogs(message.user, err, moment());
 						request.post({
 							url: 'https://slack.com/api/files.upload',
 							formData: {
@@ -427,15 +427,15 @@ bot.message((message) => {
 								file: fs.createReadStream(`sheets/${timesheet[0].username}.xlsx`),
 							},
 						}, (error, response) => {
-							if (error) log.saveLogs(message.user, err, new Date());
+							if (error) log.saveLogs(message.user, err, moment());
 						});
 					});
 				}).catch((err) => {
-					log.saveLogs(message.user, err, new Date());
+					log.saveLogs(message.user, err, moment());
 					Message.postErrorMessage(message, err);
 				});
 				} catch (err) {
-					log.saveLogs(message.user, err, new Date());
+					log.saveLogs(message.user, err, moment());
 					Message.postErrorMessage(message, err);
 				}
 				break;
@@ -474,7 +474,7 @@ function specificReport(message, timePeriod, start, end) {
 			});
 		}
 	} catch (e) {
-		log.saveLogs(message.user, e, new Date());
+		log.saveLogs(message.user, e, moment());
 	}
 }
 
