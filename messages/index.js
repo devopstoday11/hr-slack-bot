@@ -109,7 +109,7 @@ module.exports = {
 			as_user: true,
 			attachments: [
 				{
-					color: '#36a64f',
+					color: '#ff4d4d',
 					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime} `,
 					title: 'Planned Tasks',
 					text: `${updatedTime.tasks}`,
