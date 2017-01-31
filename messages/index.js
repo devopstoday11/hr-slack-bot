@@ -110,7 +110,7 @@ module.exports = {
 			attachments: [
 				{
 					color: '#36a64f',
-					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime} `,
+					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.inTime} `,
 					title: 'Planned Tasks',
 					text: `${updatedTime.tasks}`,
 					ts: `${updatedTime.taskTs}`
@@ -156,7 +156,7 @@ module.exports = {
 			}
 		});
 	},
-	updateChannelOutMessage: (timesheet, oldTs, updatedTask) => {
+	updateChannelOutMessage: (timesheet, oldTs, updateInTask, updatedOutTask) => {
 		slack.chat.update({
 			token: config.token,
 			channel: config.postChannelId,
@@ -169,14 +169,14 @@ module.exports = {
 				{
 					color: '#808000',
 					title: 'Planned Tasks',
-					text: `${timesheet.tasks}`,
+					text: `${updateInTask}`,
 					ts: `${timesheet.msgTs}`
 				},
 				{
 					color: '#36a64f',
 					title: 'Completed Tasks',
-					text: `${updatedTask}`,
-					ts: `${timesheet.msgTs}`
+					text: `${updatedOutTask}`,
+					ts: `${timesheet.msgDoneTs}`
 				}
 			] }, (errSave, data) => {
 			if (errSave) {

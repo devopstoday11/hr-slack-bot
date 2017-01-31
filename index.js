@@ -265,11 +265,12 @@ bot.message((message) => {
 								DB.saveTask(timesheet, message.message.text, timesheet.taskTs)
 								.then(() => {
 									Message.updateChannelInMessage(timesheet, timesheet.msgTs, message.message.text);
+									Message.updateChannelOutMessage(timesheet, timesheet.msgDoneTs, message.message.text, timesheet.taskDone);
 								});
 							} else if (message.previous_message.ts === timesheet.taskDoneTs) {
 								DB.saveTaskDone(timesheet, message.message.text, timesheet.taskDoneTs)
 								.then(() => {
-									Message.updateChannelOutMessage(timesheet, timesheet.msgDoneTs, message.message.text);
+									Message.updateChannelOutMessage(timesheet, timesheet.msgDoneTs, timesheet.tasks, message.message.text);
 								});
 							}
 						});
