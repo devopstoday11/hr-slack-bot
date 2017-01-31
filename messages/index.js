@@ -2,6 +2,7 @@ const slack = require('slack');
 const DB = require('../models');
 const config = require('../config');
 const log = require('../helper/logger');
+const moment = require('moment');
 
 module.exports = {
 	postSpecificReport: (timesheet, attachment, timePeriod, message) => {
@@ -9,12 +10,13 @@ module.exports = {
 			token: config.token,
 			channel: message.channel,
 			title: 'Title',
-			fallback: `*${timesheet[0].userRealname} ${timePeriod} Report*`,
+			as_user: true,
+			fallback: `${timesheet[0].userRealname} ${timePeriod} Report`,
 			text: `*${timesheet[0].userRealname} ${timePeriod} Report*`,
 			attachments: attachment,
 		}, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, new Date());
+				log.saveLogs(data.message.username, errSave, moment());
 			}
 		});
 	},
@@ -25,10 +27,11 @@ module.exports = {
 			channel: message.channel,
 			title: 'Title',
 			text: `${textMessage}`,
+			as_user: true,
 			fallback: `${textMessage}`
 		}, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, new Date());
+				log.saveLogs(data.message.username, errSave, moment());
 			}
 		});
 	},
@@ -40,13 +43,14 @@ module.exports = {
 			title: 'Title',
 			text: textMessage,
 			fallback: textMessage,
+			as_user: true,
 			attachments: [{
 				color: '#36a64f',
-				text: `${tasks}`,
+				text: `${tasks || 'No task provided'}`,
 			}]
 		}, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, new Date());
+				log.saveLogs(data.message.username, errSave, moment());
 			}
 		});
 	},
@@ -57,36 +61,70 @@ module.exports = {
 			channel: message.channel,
 			title: 'Title',
 			text: '',
-			fallback: `${error.message}`,
+			as_user: true,
 			attachments: [{
 				color: '#ff0000',
+				fallback: `${error.message}`,
 				text: `${error.message}`,
 			}]
 		}, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, new Date());
+				log.saveLogs(data.message.username, errSave, moment());
 			}
 		});
 	},
 
-	postChannelMessage: (message, updatedTime, time, text, param, inOut) => {
+	postChannelInMessage: (message, updatedTime, param) => {
 		slack.chat.postMessage({
 			token: config.token,
 			channel: config.postChannelId,
 			title: 'Title',
-			fallback: `${updatedTime.userRealname} checked ${inOut} at ${time} `,
-			text: `*${updatedTime.userRealname} checked ${inOut} at* \`${time}\` `,
+			text: `*${updatedTime.userRealname}* checked in at \`${updatedTime.inTime}\` `,
+			as_user: true,
 			attachments: [
 				{
 					color: '#36a64f',
+					fallback: `${updatedTime.userRealname} checked in at ${updatedTime.outTime} `,
 					author_name: `${updatedTime.userRealname}`,
-					title: text,
+					title: 'Today\'s Tasks',
 					text: `${message.text}`,
 					ts: `${message.ts}`
 				}
 			] }, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, new Date());
+				log.saveLogs('data.message.username', errSave, moment());
+			}
+			DB.saveChannelMessageRecord(updatedTime, data.ts, param)
+			.then((dataNew) => {
+				return true;
+			});
+		});
+	},
+	postChannelOutMessage: (message, updatedTime, param) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: config.postChannelId,
+			title: 'Title',
+			text: `*${updatedTime.userRealname}* checked out at \`${updatedTime.outTime}\` `,
+			as_user: true,
+			attachments: [
+				{
+					color: '#36a64f',
+					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime} `,
+					title: 'Planned Tasks',
+					text: `${updatedTime.tasks}`,
+					ts: `${updatedTime.taskTs}`
+				},
+				{
+					color: '#808000',
+					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime} `,
+					title: 'Completed Tasks',
+					text: `${message.text}`,
+					ts: `${message.ts}`
+				}
+			] }, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs('data.message.username', errSave, moment());
 			}
 			DB.saveChannelMessageRecord(updatedTime, data.ts, param)
 			.then((dataNew) => {
@@ -95,25 +133,54 @@ module.exports = {
 		});
 	},
 
-	updateChannelMessage: (timesheet, oldTs, updatedTask, text) => {
+	updateChannelInMessage: (timesheet, oldTs, updatedTask) => {
 		slack.chat.update({
 			token: config.token,
 			channel: config.postChannelId,
 			ts: oldTs,
 			title: 'Title',
-			text: `${timesheet.userRealname} checked in at ${timesheet.inTime} `,
+			text: `*${timesheet.userRealname}* checked in at \`${timesheet.inTime}\` `,
+			as_user: true,
 			fallback: `${timesheet.userRealname} checked in at ${timesheet.inTime} `,
 			attachments: [
 				{
 					color: '#36a64f',
 					author_name: `${timesheet.userRealname}`,
-					title: text,
+					title: 'Todays\'s Tasks',
 					text: `${updatedTask}`,
 					ts: `${timesheet.msgTs}`
 				}
 			] }, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, new Date());
+				log.saveLogs(data.message.username, errSave, moment());
+			}
+		});
+	},
+	updateChannelOutMessage: (timesheet, oldTs, updatedTask) => {
+		slack.chat.update({
+			token: config.token,
+			channel: config.postChannelId,
+			ts: oldTs,
+			title: 'Title',
+			text: `*${timesheet.userRealname}* checked out at \`${timesheet.inTime}\` `,
+			as_user: true,
+			fallback: `${timesheet.userRealname} checked out at ${timesheet.inTime} `,
+			attachments: [
+				{
+					color: '#808000',
+					title: 'Planned Tasks',
+					text: `${timesheet.tasks}`,
+					ts: `${timesheet.msgTs}`
+				},
+				{
+					color: '#36a64f',
+					title: 'Completed Tasks',
+					text: `${updatedTask}`,
+					ts: `${timesheet.msgTs}`
+				}
+			] }, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs(data.message.username, errSave, moment());
 			}
 		});
 	},
@@ -125,6 +192,7 @@ module.exports = {
 			title: 'HELP DESK',
 			fallback: 'HELP DESK',
 			text: 'Alway ready to help',
+			as_user: true,
 			attachments: [
 				{
 					fallback: 'IN',
@@ -145,7 +213,7 @@ module.exports = {
 			]
 		}, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, new Date());
+				log.saveLogs(data.message.username, errSave, moment());
 			}
 		});
 	},

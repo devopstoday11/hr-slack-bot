@@ -54,7 +54,7 @@ module.exports = {
 				});
 			}
 			query.exec((err, timesheet) => {
-				if (err) log.saveLogs(timesheet.username, err, new Date());
+				if (err) log.saveLogs(timesheet.username, err, moment());
 				resolve(timesheet);
 			});
 		});
@@ -72,7 +72,7 @@ module.exports = {
 			};
 			const sheet = new TimeMdl(timeSheet);
 			sheet.save((err, response) => {
-				if (err) log.saveLogs(response.username, err, new Date());
+				if (err) log.saveLogs(response.username, err, moment());
 				resolve(response);
 			});
 		});
@@ -81,7 +81,7 @@ module.exports = {
 	outUser: (oldSheet, time) => {
 		return new Promise((resolve, reject) => {
 			TimeMdl.findByIdAndUpdate(new ObjectId(oldSheet._id), { outTime: time }, (err, response) => {
-				if (err) log.saveLogs(response.username, err, new Date());
+				if (err) log.saveLogs(response.username, err, moment());
 				resolve(response);
 			});
 		});
@@ -90,7 +90,7 @@ module.exports = {
 	saveTask: (sheet, task, tasksTs) => {
 		return new Promise((resolve, reject) => {
 			TimeMdl.findByIdAndUpdate(new ObjectId(sheet._id), { tasks: task, taskTs: tasksTs }, (err, response) => {
-				if (err) log.saveLogs(response.username, err, new Date());
+				if (err) log.saveLogs(response.username, err, moment());
 				resolve(response);
 			});
 		});
@@ -99,7 +99,7 @@ module.exports = {
 	saveTaskDone: (sheet, task, tasksDoneTS) => {
 		return new Promise((resolve, reject) => {
 			TimeMdl.findByIdAndUpdate(new ObjectId(sheet._id), { taskDone: task, taskDoneTs: tasksDoneTS }, (err, response) => {
-				if (err) log.saveLogs(response.username, err, new Date());
+				if (err) log.saveLogs(response.username, err, moment());
 				resolve(response);
 			});
 		});
@@ -108,14 +108,14 @@ module.exports = {
 		if (param === 'msgTs') {
 			return new Promise((resolve, reject) => {
 				TimeMdl.findByIdAndUpdate(new ObjectId(sheet._id), { msgTs: ts }, (err, response) => {
-					if (err) log.saveLogs(response.username, err, new Date());
+					if (err) log.saveLogs(response.username, err, moment());
 					resolve(response);
 				});
 			});
 		} else {
 			return new Promise((resolve, reject) => {
 				TimeMdl.findByIdAndUpdate(new ObjectId(sheet._id), { msgDoneTs: ts }, (err, response) => {
-					if (err) log.saveLogs(response.username, err, new Date());
+					if (err) log.saveLogs(response.username, err, moment());
 					resolve(response);
 				});
 			});
