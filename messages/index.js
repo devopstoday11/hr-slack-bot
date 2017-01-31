@@ -109,14 +109,14 @@ module.exports = {
 			as_user: true,
 			attachments: [
 				{
-					color: '#36a64f',
+					color: '#ff4d4d',
 					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime} `,
 					title: 'Planned Tasks',
 					text: `${updatedTime.tasks}`,
 					ts: `${updatedTime.taskTs}`
 				},
 				{
-					color: '#808000',
+					color: '#36a64f',
 					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime} `,
 					title: 'Completed Tasks',
 					text: `${message.text}`,
@@ -167,7 +167,7 @@ module.exports = {
 			fallback: `${timesheet.userRealname} checked out at ${timesheet.inTime} `,
 			attachments: [
 				{
-					color: '#808000',
+					color: '#ff4d4d',
 					title: 'Planned Tasks',
 					text: `${timesheet.tasks}`,
 					ts: `${timesheet.msgTs}`

@@ -64,9 +64,9 @@ const userCheckIn = new CronJob({
 	onTick() {
 		let text = '';
 		if (moment().format('HH').toString() === '09') {
-			text = 'let\'s check you in.\n proceed by entering `in` command';
+			text = 'Good Morning :city_sunrise::sun_small_cloud:\n\nLet\'s check you in.\n proceed by entering *`in`* command';
 		} else {
-			text = 'Don\'t forget to checkout when you leave the office by entering `out` command';
+			text = '*`A Gentle reminder`* \nDon\'t forget to checkout when you leave the office by entering *`out`* command';
 		}
 		payloadIms.forEach((ims) => {
 			slack.chat.postMessage({
@@ -234,7 +234,7 @@ bot.message((message) => {
 							if (!timesheet.outTime && !timesheet.tasks) {
 								DB.saveTask(timesheet, task, message.ts)
 										.then((updatedTime) => {
-											Message.postMessage(message, 'You have successfully checked in and your tasks are posted in `daily-scrum`');
+											Message.postMessage(message, 'You have successfully checked in and your tasks are posted in `daily-scrum`\n All the best for the day');
 											Message.postChannelInMessage(message, updatedTime, 'msgTs');
 										}).catch((err) => {
 											log.saveLogs(message.user, err, moment());
@@ -242,7 +242,7 @@ bot.message((message) => {
 							} else if (timesheet.outTime && !timesheet.taskDone) {
 								DB.saveTaskDone(timesheet, task, message.ts)
 									.then((updatedTime) => {
-										Message.postMessage(message, 'You have successfully checked out and your completed tasks are posted in `daily-scrum`');
+										Message.postMessage(message, 'You have successfully checked out and your completed tasks are posted in `daily-scrum`\n Have a good night\n Check this out too : http://www.thecoffeeshoptrader.com/2016/05/work-determines-future-spend-one-hour-per-day-five-things-life-will-change.html');
 										Message.postChannelOutMessage(message, updatedTime, 'msgDoneTs');
 									}).catch((err) => {
 										log.saveLogs(message.user, err, moment());
