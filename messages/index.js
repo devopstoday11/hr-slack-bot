@@ -46,7 +46,7 @@ module.exports = {
 			as_user: true,
 			attachments: [{
 				color: '#36a64f',
-				text: `${tasks}`,
+				text: `${tasks || 'No task provided'}`,
 			}]
 		}, (errSave, data) => {
 			if (errSave) {

@@ -242,7 +242,7 @@ bot.message((message) => {
 							} else if (timesheet.outTime && !timesheet.taskDone) {
 								DB.saveTaskDone(timesheet, task, message.ts)
 									.then((updatedTime) => {
-										Message.postMessage(message, `You have successfully checked out and your completed tasks are posted in <#${config.postChannelId}>`);
+										Message.postMessage(message, 'You have successfully checked out and your completed tasks are posted in `daily-scrum`');
 										Message.postChannelOutMessage(message, updatedTime, 'msgDoneTs');
 									}).catch((err) => {
 										log.saveLogs(message.user, err, moment());
