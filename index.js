@@ -63,7 +63,7 @@ const userCheckIn = new CronJob({
 	// cronTime: '*/10 * * * * *',
 	onTick() {
 		let text = '';
-		if (moment().format('HH').toString() === '09') {
+		if (moment().format('HH').toString() === '08') {
 			text = 'Good Morning :city_sunrise::sun_small_cloud:\n\nLet\'s check you in.\n proceed by entering *`in`* command';
 		} else {
 			text = '*`A Gentle reminder`* \nDon\'t forget to checkout when you leave the office by entering *`out`* command';
