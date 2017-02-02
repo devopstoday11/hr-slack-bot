@@ -60,7 +60,7 @@ bot.started((payload) => {
 });
 
 const userCheckIn = new CronJob({
-	cronTime: '0 0 8,19 * * 1-6',
+	cronTime: '0 30 8,18 * * 1-6',
 	// cronTime: '*/10 * * * * *',
 	onTick() {
 		let text = '';
