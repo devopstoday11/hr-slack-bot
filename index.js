@@ -60,29 +60,31 @@ bot.started((payload) => {
 });
 
 const userCheckIn = new CronJob({
-	cronTime: '0 30 8,18 * * 1-6',
+	cronTime: '0 0 8,19 * * 1-6',
 	// cronTime: '*/10 * * * * *',
 	onTick() {
 		let text = '';
 
 		payloadIms.forEach((ims) => {
 			const user = _.find(users, { id: ims.user });
-			if (moment().format('HH').toString() === '08') {
-				text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
-			} else {
-				text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command`;
-			}
-			slack.chat.postMessage({
-				token: config.token,
-				channel: ims.id,
-				as_user: true,
-				title: 'Title',
-				text,
-			}, (errSave, data) => {
-				if (errSave) {
-					log.saveLogs('Cron JOB', errSave, moment());
+			if (user) {
+				if (moment().format('HH').toString() === '08') {
+					text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
+				} else {
+					text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command`;
 				}
-			});
+				slack.chat.postMessage({
+					token: config.token,
+					channel: ims.id,
+					as_user: true,
+					title: 'Title',
+					text,
+				}, (errSave, data) => {
+					if (errSave) {
+						log.saveLogs('Cron JOB', errSave, moment());
+					}
+				});
+			}
 		});
 	},
 	start: false,
