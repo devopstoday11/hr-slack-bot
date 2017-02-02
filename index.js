@@ -71,7 +71,7 @@ const userCheckIn = new CronJob({
 				if (moment().format('HH').toString() === '08') {
 					text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
 				} else {
-					text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command`;
+					text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\nIf you have any suggestion, queries or concerns about this BOT than please contact Administrators.Your contributions are appreciated`;
 				}
 				slack.chat.postMessage({
 					token: config.token,
