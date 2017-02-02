@@ -30,6 +30,7 @@ module.exports = {
 			});
 		});
 	},
+
 	getSpecificTimesheet: (userId, start, end) => {
 		return new Promise((resolve, reject) => {
 			// Get to and from date for query
@@ -53,7 +54,7 @@ module.exports = {
 					}
 				});
 			}
-			query.exec((err, timesheet) => {
+			query.sort({ createdAt: 1 }).exec((err, timesheet) => {
 				if (err) log.saveLogs(timesheet.username, err, moment());
 				resolve(timesheet);
 			});
