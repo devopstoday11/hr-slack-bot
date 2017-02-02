@@ -1,4 +1,4 @@
-/* eslint-disable no-case-declarations */
+/* eslint-disable no-case-declarations, no-param-reassign */
 const slack = require('slack');
 const config = require('./config');
 const mongoose = require('mongoose');
@@ -10,21 +10,20 @@ const Message = require('./messages');
 const moment = require('moment');
 const _ = require('lodash');
 const excel = require('node-excel-export');
+const CronJob = require('cron').CronJob;
 const fs = require('fs');
 const request = require('request');
+
 const log = require('./helper/logger');
-const CronJob = require('cron').CronJob;
-
-const temp = [];
-
-const bot = slack.rtm.client();
-const token = config.token;
-
-const timeRegex = new RegExp('^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+const links = require('./messages/links');
 
 mongoose.connect(config.mongoURL);
 
+const bot = slack.rtm.client();
+const token = config.token;
+const timeRegex = new RegExp('^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
 const users = [];
+
 let time;
 let	spaceIndex;
 let	userId;
@@ -33,12 +32,13 @@ let	commands;
 let attachment = [];
 let attach;
 let payloadIms;
-// do something with the rtm.start payload
+
 bot.started((payload) => {
 	const payloadUsers = payload.users;
 	payloadIms = payload.ims;
 	payloadUsers.forEach((user) => {
 		if (!user.is_bot && user.name !== 'slackbot') {
+			user.image_192 = user.profile.image_192;
 			const dbUser = new UserMdl(user);
 			users.push(dbUser);
 			UserMdl.update({ id: user.id }, user, { upsert: true, setDefaultsOnInsert: true }, (err, result) => {
@@ -58,20 +58,24 @@ bot.started((payload) => {
 	// 	});
 	// });
 });
+
 const userCheckIn = new CronJob({
 	cronTime: '0 30 8,18 * * 1-6',
 	// cronTime: '*/10 * * * * *',
 	onTick() {
 		let text = '';
-		if (moment().format('HH').toString() === '08') {
-			text = 'Good Morning :city_sunrise::sun_small_cloud:\n\nLet\'s check you in.\n proceed by entering *`in`* command';
-		} else {
-			text = '*`A Gentle reminder`* \nDon\'t forget to checkout when you leave the office by entering *`out`* command';
-		}
+
 		payloadIms.forEach((ims) => {
+			const user = _.find(users, { id: ims.user });
+			if (moment().format('HH').toString() === '08') {
+				text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
+			} else {
+				text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command`;
+			}
 			slack.chat.postMessage({
 				token: config.token,
 				channel: ims.id,
+				as_user: true,
 				title: 'Title',
 				text,
 			}, (errSave, data) => {
@@ -235,15 +239,16 @@ bot.message((message) => {
 								DB.saveTask(timesheet, task, message.ts)
 										.then((updatedTime) => {
 											Message.postMessage(message, 'You have successfully checked in and your tasks are posted in `daily-scrum`\n All the best for the day');
-											Message.postChannelInMessage(message, updatedTime, 'msgTs');
+											Message.postChannelInMessage(message, updatedTime, user, 'msgTs');
 										}).catch((err) => {
 											log.saveLogs(message.user, err, moment());
 										});
 							} else if (timesheet.outTime && !timesheet.taskDone) {
 								DB.saveTaskDone(timesheet, task, message.ts)
 									.then((updatedTime) => {
-										Message.postMessage(message, 'You have successfully checked out and your completed tasks are posted in `daily-scrum`\n Have a good night\n Check this out too : http://www.thecoffeeshoptrader.com/2016/05/work-determines-future-spend-one-hour-per-day-five-things-life-will-change.html');
-										Message.postChannelOutMessage(message, updatedTime, 'msgDoneTs');
+										const linkIndex = Math.floor(Math.random() * links.length);
+										Message.postMessage(message, `You have successfully checked out and your completed tasks are posted in \`daily-scrum\`\n Have a good night\n\n Check this out too : ${links[linkIndex]}`);
+										Message.postChannelOutMessage(message, updatedTime, user, 'msgDoneTs');
 									}).catch((err) => {
 										log.saveLogs(message.user, err, moment());
 									});
@@ -251,7 +256,7 @@ bot.message((message) => {
 								throw new Error('You confused me :sweat_smile: \n\n You have already added tasks\nso can\'t add more tasks but if you have changed your mind or something came up then please edit old task message :wink: ');
 							}
 						} else {
-							throw new Error('You first need to enter in the office to start conversation:wink: ');
+							throw new Error('You first need to enter in the office to start conversation :wink:');
 						}
 					}).catch((err) => {
 						log.saveLogs(message.user, err, moment());
@@ -464,7 +469,7 @@ function specificReport(message, timePeriod, start, end) {
 					attach = {
 						color: colorCode[i % 6],
 						title: `${moment(t.createdAt).format('DD-MM-YYYY')}`,
-						text: `check in time : ${t.inTime} \ncheck out time : ${t.outTime}\n\nTasks planned : \n${t.tasks} \n\nCompleted task: \n${t.taskDone}  `,
+						text: `Time : ${t.inTime} - ${t.outTime}\n\nTasks planned : \n${t.tasks} \n\nCompleted task: \n${t.taskDone}  `,
 						ts: `${t.taskDone}`
 					};
 					attachment.push(attach);

@@ -74,7 +74,7 @@ module.exports = {
 		});
 	},
 
-	postChannelInMessage: (message, updatedTime, param) => {
+	postChannelInMessage: (message, updatedTime, user, param) => {
 		slack.chat.postMessage({
 			token: config.token,
 			channel: config.postChannelId,
@@ -85,10 +85,11 @@ module.exports = {
 				{
 					color: '#36a64f',
 					fallback: `${updatedTime.userRealname} checked in at ${updatedTime.inTime} `,
-					author_name: `${updatedTime.userRealname}`,
+					author_name: updatedTime.userRealname,
 					title: 'Today\'s Tasks',
-					text: `${message.text}`,
-					ts: `${message.ts}`
+					text: message.text,
+					ts: message.ts,
+					thumb_url: user.image_192,
 				}
 			] }, (errSave, data) => {
 			if (errSave) {
@@ -100,27 +101,46 @@ module.exports = {
 			});
 		});
 	},
-	postChannelOutMessage: (message, updatedTime, param) => {
+
+	postChannelOutMessage: (message, updatedTime, user, param) => {
 		slack.chat.postMessage({
 			token: config.token,
 			channel: config.postChannelId,
 			title: 'Title',
-			text: `*${updatedTime.userRealname}* checked out at \`${updatedTime.outTime}\` `,
+			text: `*${updatedTime.userRealname}* has checked out`,
 			as_user: true,
 			attachments: [
+				{
+					color: '#439FE0',
+					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime}`,
+					mrkdwn_in: ['text', 'fields'],
+					fields: [
+						{
+							title: 'Check-In Time',
+							value: `*\`${updatedTime.inTime}\`*`,
+							short: true
+						},
+						{
+							title: 'Check-Out Time',
+							value: `*\`${updatedTime.outTime}\`*`,
+							short: true
+						}
+					],
+					thumb_url: user.image_192,
+				},
 				{
 					color: '#ff4d4d',
 					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime} `,
 					title: 'Planned Tasks',
-					text: `${updatedTime.tasks}`,
-					ts: `${updatedTime.taskTs}`
+					text: updatedTime.tasks,
+					ts: updatedTime.taskTs,
 				},
 				{
 					color: '#36a64f',
 					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime} `,
 					title: 'Completed Tasks',
-					text: `${message.text}`,
-					ts: `${message.ts}`
+					text: message.text,
+					ts: message.ts
 				}
 			] }, (errSave, data) => {
 			if (errSave) {
