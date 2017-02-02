@@ -6,6 +6,7 @@ const userSchema = new Schema({
 	name: { type: String, index: true },
 	id: { type: String, index: true },
 	real_name: { type: String },
+	image_192: { type: String },
 	created: { type: Date, default: Date.now },
 });
 
