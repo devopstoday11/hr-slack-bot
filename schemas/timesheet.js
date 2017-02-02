@@ -15,7 +15,7 @@ const timeSheetSchema = new Schema({
 	taskDoneTs: { type: String, default: null },
 	msgTs: { type: String, default: null },
 	msgDoneTs: { type: String, default: null },
-	createdAt: { type: Date, default: moment().toDate(), index: true },
+	createdAt: { type: Date, default: Date.now, index: true },
 });
 
 const TimeMdl = mongoose.model('TimeSheet', timeSheetSchema);
