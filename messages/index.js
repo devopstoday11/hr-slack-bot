@@ -16,7 +16,7 @@ module.exports = {
 			attachments: attachment,
 		}, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, moment());
+				log.saveLogs(timesheet[0].userRealname, errSave, new Date());
 			}
 		});
 	},
@@ -31,7 +31,7 @@ module.exports = {
 			fallback: `${textMessage}`
 		}, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, moment());
+				log.saveLogs(message.user, errSave, new Date());
 			}
 		});
 	},
@@ -50,7 +50,7 @@ module.exports = {
 			}]
 		}, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, moment());
+				log.saveLogs(message.user, errSave, new Date());
 			}
 		});
 	},
@@ -69,7 +69,7 @@ module.exports = {
 			}]
 		}, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, moment());
+				log.saveLogs(message.user, errSave, new Date());
 			}
 		});
 	},
@@ -87,13 +87,13 @@ module.exports = {
 					fallback: `${updatedTime.userRealname} checked in at ${updatedTime.inTime} `,
 					author_name: updatedTime.userRealname,
 					title: 'Today\'s Tasks',
-					text: message.text,
-					ts: message.ts,
+					text: message.text`,
+					ts: message.ts`,
 					thumb_url: user.image_192,
 				}
 			] }, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs('data.message.username', errSave, moment());
+				log.saveLogs(updatedTime.userRealname, errSave, new Date());
 			}
 			DB.saveChannelMessageRecord(updatedTime, data.ts, param)
 			.then((dataNew) => {
@@ -101,18 +101,18 @@ module.exports = {
 			});
 		});
 	},
-
 	postChannelOutMessage: (message, updatedTime, user, param) => {
 		slack.chat.postMessage({
 			token: config.token,
 			channel: config.postChannelId,
 			title: 'Title',
-			text: `*${updatedTime.userRealname}* has checked out`,
+			text: `*${updatedTime.userRealname}* checked out at \`${updatedTime.outTime}\` `,
 			as_user: true,
 			attachments: [
 				{
 					color: '#439FE0',
-					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime}`,
+					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime} `,
+					title: 'Planned Tasks',
 					mrkdwn_in: ['text', 'fields'],
 					fields: [
 						{
@@ -126,7 +126,7 @@ module.exports = {
 							short: true
 						}
 					],
-					thumb_url: user.image_192,
+					thumb_url: user.image_192
 				},
 				{
 					color: '#ff4d4d',
@@ -144,7 +144,7 @@ module.exports = {
 				}
 			] }, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs('data.message.username', errSave, moment());
+				log.saveLogs(updatedTime.userRealname, errSave, new Date());
 			}
 			DB.saveChannelMessageRecord(updatedTime, data.ts, param)
 			.then((dataNew) => {
@@ -172,7 +172,7 @@ module.exports = {
 				}
 			] }, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, moment());
+				log.saveLogs(timesheet.userRealname, errSave, new Date());
 			}
 		});
 	},
@@ -200,7 +200,7 @@ module.exports = {
 				}
 			] }, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, moment());
+				log.saveLogs(timesheet.userRealname, errSave, new Date());
 			}
 		});
 	},
@@ -233,7 +233,7 @@ module.exports = {
 			]
 		}, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, moment());
+				log.saveLogs(data.message.username, errSave, new Date());
 			}
 		});
 	},
