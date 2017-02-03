@@ -105,13 +105,13 @@ const userCheckIn = new CronJob({
  * }
  */
 bot.message((message) => {
-	let user;
+	let user = {};
 	if (!message.subtype) {
 		user = _.find(users, { id: message.user });
-	} else {
+	} else if (message.subtype === 'message_changed') {
 		user = _.find(users, { id: message.previous_message.user });
 	}
-	if (message.channel !== config.postChannelId && user) {
+	if (message.channel !== config.postChannelId) {
 		let testCase = '';
 		if (message.type === 'message' && !message.subtype && !message.bot_id) {
 			try {
@@ -428,7 +428,8 @@ bot.message((message) => {
 							}
 						]
 					);
-					fs.writeFile(`sheets/${timesheet[0].username}.xlsx`, report, (res, err) => {
+
+					fs.writeFile(`${__dirname}/sheets/${timesheet[0].username}.xlsx`, report, (res, err) => {
 						if (err) log.saveLogs(message.user, err, moment());
 						request.post({
 							url: 'https://slack.com/api/files.upload',
@@ -438,7 +439,7 @@ bot.message((message) => {
 								filename: `${timesheet[0].username}.xlsx`,
 								filetype: 'auto',
 								channels: message.channel,
-								file: fs.createReadStream(`sheets/${timesheet[0].username}.xlsx`),
+								file: fs.createReadStream(`${__dirname}/sheets/${timesheet[0].username}.xlsx`),
 							},
 						}, (error, response) => {
 							if (error) log.saveLogs(message.user, err, moment());
