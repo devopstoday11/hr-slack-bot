@@ -71,7 +71,7 @@ const userCheckIn = new CronJob({
 				if (moment().format('HH').toString() === '08') {
 					text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
 				} else {
-					text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\nIf you have any suggestion, queries or concerns about this BOT than please contact Administrators.Your contributions are appreciated`;
+					text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\nIf you have any suggestion, queries or concern`;
 				}
 				slack.chat.postMessage({
 					token: config.token,
@@ -104,8 +104,13 @@ const userCheckIn = new CronJob({
  * }
  */
 bot.message((message) => {
-	if (message.channel !== config.postChannelId) {
-		const user = _.find(users, { id: message.user });
+	let user;
+	if (!message.subtype) {
+		user = _.find(users, { id: message.user });
+	} else {
+		user = _.find(users, { id: message.previous_message.user });
+	}
+	if (message.channel !== config.postChannelId && user) {
 		let testCase = '';
 		if (message.type === 'message' && !message.subtype && !message.bot_id) {
 			try {
@@ -271,13 +276,13 @@ bot.message((message) => {
 							if (message.previous_message.ts === timesheet.taskTs) {
 								DB.saveTask(timesheet, message.message.text, timesheet.taskTs)
 								.then(() => {
-									Message.updateChannelInMessage(timesheet, timesheet.msgTs, message.message.text);
-									Message.updateChannelOutMessage(timesheet, timesheet.msgDoneTs, message.message.text, timesheet.taskDone);
+									Message.updateChannelInMessage(timesheet, timesheet.msgTs, user, message.message.text);
+									Message.updateChannelOutMessage(timesheet, timesheet.msgDoneTs, message.message.text, user, timesheet.taskDone);
 								});
 							} else if (message.previous_message.ts === timesheet.taskDoneTs) {
 								DB.saveTaskDone(timesheet, message.message.text, timesheet.taskDoneTs)
 								.then(() => {
-									Message.updateChannelOutMessage(timesheet, timesheet.msgDoneTs, timesheet.tasks, message.message.text);
+									Message.updateChannelOutMessage(timesheet, timesheet.msgDoneTs, timesheet.tasks, user, message.message.text);
 								});
 							}
 						});

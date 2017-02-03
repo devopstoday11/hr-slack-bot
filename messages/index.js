@@ -2,7 +2,6 @@ const slack = require('slack');
 const DB = require('../models');
 const config = require('../config');
 const log = require('../helper/logger');
-const moment = require('moment');
 
 module.exports = {
 	postSpecificReport: (timesheet, attachment, timePeriod, message) => {
@@ -87,8 +86,8 @@ module.exports = {
 					fallback: `${updatedTime.userRealname} checked in at ${updatedTime.inTime} `,
 					author_name: updatedTime.userRealname,
 					title: 'Today\'s Tasks',
-					text: message.text`,
-					ts: message.ts`,
+					text: message.text,
+					ts: message.ts,
 					thumb_url: user.image_192,
 				}
 			] }, (errSave, data) => {
@@ -101,18 +100,18 @@ module.exports = {
 			});
 		});
 	},
+
 	postChannelOutMessage: (message, updatedTime, user, param) => {
 		slack.chat.postMessage({
 			token: config.token,
 			channel: config.postChannelId,
 			title: 'Title',
-			text: `*${updatedTime.userRealname}* checked out at \`${updatedTime.outTime}\` `,
+			text: `*${updatedTime.userRealname}* has checked out`,
 			as_user: true,
 			attachments: [
 				{
 					color: '#439FE0',
-					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime} `,
-					title: 'Planned Tasks',
+					fallback: `${updatedTime.userRealname} checked out at ${updatedTime.outTime}`,
 					mrkdwn_in: ['text', 'fields'],
 					fields: [
 						{
@@ -126,7 +125,7 @@ module.exports = {
 							short: true
 						}
 					],
-					thumb_url: user.image_192
+					thumb_url: user.image_192,
 				},
 				{
 					color: '#ff4d4d',
@@ -153,22 +152,23 @@ module.exports = {
 		});
 	},
 
-	updateChannelInMessage: (timesheet, oldTs, updatedTask) => {
+	updateChannelInMessage: (timesheet, oldTs, user, updatedTask) => {
 		slack.chat.update({
 			token: config.token,
 			channel: config.postChannelId,
-			ts: oldTs,
 			title: 'Title',
 			text: `*${timesheet.userRealname}* checked in at \`${timesheet.inTime}\` `,
 			as_user: true,
-			fallback: `${timesheet.userRealname} checked in at ${timesheet.inTime} `,
+			ts: oldTs,
 			attachments: [
 				{
 					color: '#36a64f',
-					author_name: `${timesheet.userRealname}`,
-					title: 'Todays\'s Tasks',
-					text: `${updatedTask}`,
-					ts: `${timesheet.msgTs}`
+					fallback: `${timesheet.userRealname} checked in at ${timesheet.inTime} `,
+					author_name: timesheet.userRealname,
+					title: 'Today\'s Tasks',
+					text: updatedTask,
+					ts: timesheet.msgTs,
+					thumb_url: user.image_192,
 				}
 			] }, (errSave, data) => {
 			if (errSave) {
@@ -176,27 +176,46 @@ module.exports = {
 			}
 		});
 	},
-	updateChannelOutMessage: (timesheet, oldTs, updateInTask, updatedOutTask) => {
+	updateChannelOutMessage: (timesheet, oldTs, updateInTask, user, updatedOutTask) => {
 		slack.chat.update({
 			token: config.token,
 			channel: config.postChannelId,
 			ts: oldTs,
 			title: 'Title',
-			text: `*${timesheet.userRealname}* checked out at \`${timesheet.outTime}\` `,
+			text: `*${timesheet.userRealname}* has checked out`,
 			as_user: true,
-			fallback: `${timesheet.userRealname} checked out at ${timesheet.outTime} `,
 			attachments: [
 				{
+					color: '#439FE0',
+					fallback: `${timesheet.userRealname} checked out at ${timesheet.outTime}`,
+					mrkdwn_in: ['text', 'fields'],
+					fields: [
+						{
+							title: 'Check-In Time',
+							value: `*\`${timesheet.inTime}\`*`,
+							short: true
+						},
+						{
+							title: 'Check-Out Time',
+							value: `*\`${timesheet.outTime}\`*`,
+							short: true
+						}
+					],
+					thumb_url: user.image_192,
+				},
+				{
 					color: '#ff4d4d',
+					fallback: `${timesheet.userRealname} checked out at ${timesheet.outTime} `,
 					title: 'Planned Tasks',
-					text: `${updateInTask}`,
-					ts: `${timesheet.msgTs}`
+					text: updateInTask,
+					ts: timesheet.taskTs,
 				},
 				{
 					color: '#36a64f',
+					fallback: `${timesheet.userRealname} checked out at ${timesheet.outTime} `,
 					title: 'Completed Tasks',
-					text: `${updatedOutTask}`,
-					ts: `${timesheet.msgDoneTs}`
+					text: updatedOutTask,
+					ts: timesheet.taskDoneTs
 				}
 			] }, (errSave, data) => {
 			if (errSave) {
@@ -233,7 +252,7 @@ module.exports = {
 			]
 		}, (errSave, data) => {
 			if (errSave) {
-				log.saveLogs(data.message.username, errSave, new Date());
+				log.saveLogs('Undefined', errSave, new Date());
 			}
 		});
 	},
