@@ -2,6 +2,7 @@ const slack = require('slack');
 const DB = require('../models');
 const config = require('../config');
 const log = require('../helper/logger');
+const DateHelper = require('../helper/date_parser');
 
 module.exports = {
 	postSpecificReport: (timesheet, attachment, timePeriod, message) => {
@@ -253,6 +254,43 @@ module.exports = {
 		}, (errSave, data) => {
 			if (errSave) {
 				log.saveLogs('Undefined', errSave, new Date());
+			}
+		});
+	},
+
+	postLeaveMessageToAdmin: (channelId, user, leaveReport) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: config.postChannelId,
+			title: 'Title',
+			text: `*${user.real_name}* has requested for leave.\n*Accept :* \`leaveaccept ${leaveReport.leaveCode}\`\n*Report :* \`leavereject ${leaveReport.leaveCode}\``,
+			as_user: true,
+			attachments: [
+				{
+					color: '#439FE0',
+					mrkdwn_in: ['text', 'fields'],
+					fields: [
+						{
+							title: 'Leave From',
+							value: `*\`${DateHelper.getDateAsDDMMYYYY(leaveReport.fromDate)}\`*`,
+							short: true
+						},
+						{
+							title: 'Leave To',
+							value: `*\`${DateHelper.getDateAsDDMMYYYY(leaveReport.toDate)}\`*`,
+							short: true
+						},
+						{
+							title: 'Reason',
+							value: `${leaveReport.reason}`,
+							short: false
+						}
+					],
+					thumb_url: user.image_192,
+				}
+			] }, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs(user.userRealname, errSave, new Date());
 			}
 		});
 	},

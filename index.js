@@ -1,21 +1,23 @@
 /* eslint-disable no-case-declarations, no-param-reassign */
 const slack = require('slack');
+const fs = require('fs');
+const request = require('request');
+const moment = require('moment');
+const _ = require('lodash');
+const excel = require('node-excel-export');
+const CronJob = require('cron').CronJob;
+
 const config = require('./config');
 const mongoose = require('mongoose');
 const UserMdl = require('./schemas/user');
 const ImsMdl = require('./schemas/ims');
 const TimeMdl = require('./schemas/timesheet');
+const LeaveMdl = require('./models/leave_model');
 const DB = require('./models');
 const Message = require('./messages');
-const moment = require('moment');
-const _ = require('lodash');
-const excel = require('node-excel-export');
-const CronJob = require('cron').CronJob;
-const fs = require('fs');
-const request = require('request');
-
 const log = require('./helper/logger');
 const links = require('./messages/links');
+const DateHelper = require('./helper/date_parser');
 
 mongoose.connect(config.mongoURL);
 
@@ -71,8 +73,7 @@ const userCheckIn = new CronJob({
 				if (moment().format('HH').toString() === '08') {
 					text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
 				} else {
-					text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave
-					 the office by entering *\`out\`* command\n\nIf you have any suggestion, queries or concern, contact administrator`;
+					text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\nIf you have any suggestion, queries or concern then please contact administrator\n Inputs are always welcomed`;
 				}
 				slack.chat.postMessage({
 					token: config.token,
@@ -149,6 +150,12 @@ bot.message((message) => {
 						} else {
 							testCase = 'UNAUTHORIZED';
 						}
+					} else {
+						testCase = 'WRONG';
+					}
+				} else if (message.text.toLowerCase() === 'leave' || message.text.toLowerCase().indexOf('leave ') === 0) {
+					if (message.text.toLowerCase().indexOf('leave ') === 0) {
+						testCase = 'LEAVE';
 					} else {
 						testCase = 'WRONG';
 					}
@@ -295,25 +302,54 @@ bot.message((message) => {
 				specificReport(message, 'month', 1, 30);
 				break;
 			case 'HELP':
-				// commands = 'List Of Commands :point_down: \nIN/IN HH:MM : when you start the work. :walking:  \n' +
-				// 'OUT/OUT HH:MM : when you leave. :v: ' +
-				// '\n\nYou can enter the tasks only one time, after that, you can only edit that message. :thumbsup_all: \n\n\n' +
-				// 'Only for HR :grin: : \nweek @user : To get last week timesheet of @user.\n' +
-				// 'month @user : to get last month activities of @user.\n' +
-				// 'excel @user : to get Excel sheet of all the data of @user.\n\n' +
-				// 'Only one space is allowed between WEEK,MONTH,EXCEL,IN,OUT and @user/Time !!';
 				Message.postHelpMessage(message);
 
 				break;
 			case 'NOTHING_TO_DO':
 				Message.postErrorMessage(message, new Error('You can only edit task listing messages! :sweat_smile:'));
-
 				break;
 			case 'WRONG':
-				Message.postErrorMessage(message, new Error(':joy: \nInstructions: :sweat_smile: \nType correct username. :sunglasses: \nOnly one space should be there after "month"/"week"\n\ne.g week @slackbot\n  month @slackbot'));
+				Message.postErrorMessage(message, new Error(':joy: \nInvalid Command'));
 				break;
 			case 'UNAUTHORIZED':
 				Message.postErrorMessage(message, new Error('\nNo No No !!! It\'s Rescricted area ....!! :rage:'));
+				break;
+			case 'LEAVE':
+				console.log(message.text);
+				let res = [];
+				res = message.text.split(' ');
+				console.log(res);
+				if (!res.length === 4) {
+					Message.postErrorMessage(message, new Error('\nNo No No !!! Invalid command :rage:'));
+				} else {
+					const toDate = DateHelper.parseDate(res[1]);
+					const fromDate = DateHelper.parseDate(res[2]);
+					const reason = res[3];
+
+					if (toDate && fromDate) {
+						if (toDate.getTime() < fromDate.getTime()) {
+							LeaveMdl.saveLeaveRequest(user, toDate, fromDate)
+							.then((leaveReport) => {
+								Message.postMessage(message, `Your leave request has been sent to admins for approval\n*Request Id : * *\`${leaveReport.leaveCode}\`*\n Sit back and relax I will notify you when I get update on this request.`);
+								const adminIMS = [];
+								config.admin.forEach((admin) => {
+									const ims = _.find(payloadIms, { user: user.id });
+									adminIMS.push(ims.id);
+								});
+								adminIMS.forEach((channelId) => {
+									Message.postLeaveMessageToAdmin(channelId, user, leaveReport);
+								});
+							})
+							.catch((e) => {
+								Message.postErrorMessage(message, new Error('\nThere is some problem serving you request. Please try again till then I will repair myself.'));
+							});
+						} else {
+							Message.postErrorMessage(message, new Error(`I think ${DateHelper.getDateAsDDMMYYYY(fromDate)} is larger than ${DateHelper.getDateAsDDMMYYYY(toDate)} or you are doing something wrong\n I thought you are inteligent ,Sorry my mistake :wink:`));
+						}
+					} else {
+						Message.postErrorMessage(message, new Error('You are not a good reader. Help command clearly says DD-MM-YYYY format :wink:'));
+					}
+				}
 				break;
 			case 'EXCEL':
 				try {
@@ -321,37 +357,21 @@ bot.message((message) => {
 						headerDark: {
 							fill: {
 								fgColor: {
-									rgb: 'FF000000'
+									rgb: 'C0C0C0'
 								},
-								sz: 15
+								sz: 15,
+								height: 20
 							},
 							font: {
 								color: {
-									rgb: 'FFFFFFFF'
+									rgb: '000000'
 								},
 								sz: 14,
 								bold: true,
 								underline: true
 							}
-						},
-						cellPink: {
-							fill: {
-								fgColor: {
-									rgb: 'FFFFCCFF'
-								},
-								sz: 15
-							}
-						},
-						cellGreen: {
-							fill: {
-								fgColor: {
-									rgb: '00FF0000'
-								},
-								sz: 15
-							}
 						}
 					};
-
 				// Array of objects representing heading rows (very top)
 				// Here you specify the export structure
 					const specification = {
@@ -429,7 +449,7 @@ bot.message((message) => {
 						]
 					);
 
-					fs.writeFile(`${__dirname}/sheets/${timesheet[0].username}.xlsx`, report, (res, err) => {
+					fs.writeFile(`${__dirname}/sheets/${timesheet[0].username}.xlsx`, report, (res2, err) => {
 						if (err) log.saveLogs(message.user, err, moment());
 						request.post({
 							url: 'https://slack.com/api/files.upload',
