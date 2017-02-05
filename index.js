@@ -38,6 +38,7 @@ let payloadIms;
 bot.started((payload) => {
 	const payloadUsers = payload.users;
 	payloadIms = payload.ims;
+	// console.log(payloadIms);
 	payloadUsers.forEach((user) => {
 		if (!user.is_bot && user.name !== 'slackbot') {
 			user.image_192 = user.profile.image_192;
@@ -107,6 +108,7 @@ const userCheckIn = new CronJob({
  */
 bot.message((message) => {
 	let user = {};
+	// console.log(message);
 	if (!message.subtype) {
 		user = _.find(users, { id: message.user });
 	} else if (message.subtype === 'message_changed') {
@@ -153,9 +155,23 @@ bot.message((message) => {
 					} else {
 						testCase = 'WRONG';
 					}
-				} else if (message.text.toLowerCase() === 'leave' || message.text.toLowerCase().indexOf('leave ') === 0) {
+				} else if (message.text.toLowerCase() === 'leave' || message.text.toLowerCase().indexOf('leave') === 0) {
 					if (message.text.toLowerCase().indexOf('leave ') === 0) {
 						testCase = 'LEAVE';
+					} else if (message.text.toLowerCase().indexOf('leaveaccept ') === 0) {
+						testCase = 'LEAVEACCEPT';
+					} else if (message.text.toLowerCase().indexOf('leavereject ') === 0) {
+						testCase = 'LEAVEREJECT';
+					} else if (message.text.toLowerCase().indexOf('leavereport ') === 0) {
+						if (message.text.toLowerCase().indexOf('leavereport <@') === 0) {
+							if (_.find(config.admin, (o) => { return o === message.user; })) {
+								testCase = 'LEAVEREPORT';
+							} else {
+								testCase = 'UNAUTHORIZED';
+							}
+						} else {
+							testCase = 'WRONG';
+						}
 					} else {
 						testCase = 'WRONG';
 					}
@@ -315,29 +331,26 @@ bot.message((message) => {
 				Message.postErrorMessage(message, new Error('\nNo No No !!! It\'s Rescricted area ....!! :rage:'));
 				break;
 			case 'LEAVE':
-				console.log(message.text);
 				let res = [];
 				res = message.text.split(' ');
-				console.log(res);
-				if (!res.length === 4) {
+				if (!res.length >= 4) {
 					Message.postErrorMessage(message, new Error('\nNo No No !!! Invalid command :rage:'));
 				} else {
-					const toDate = DateHelper.parseDate(res[1]);
-					const fromDate = DateHelper.parseDate(res[2]);
-					const reason = res[3];
-
+					const fromDate = DateHelper.parseDate(res[1]);
+					const toDate = DateHelper.parseDate(res[2]);
+					const reason = res.slice(3, res.length).join(' ');
 					if (toDate && fromDate) {
-						if (toDate.getTime() < fromDate.getTime()) {
-							LeaveMdl.saveLeaveRequest(user, toDate, fromDate)
-							.then((leaveReport) => {
-								Message.postMessage(message, `Your leave request has been sent to admins for approval\n*Request Id : * *\`${leaveReport.leaveCode}\`*\n Sit back and relax I will notify you when I get update on this request.`);
+						if (fromDate.getTime() < toDate.getTime()) {
+							LeaveMdl.saveLeaveRequest(user, toDate, fromDate, reason)
+							.then((newLeaveReport) => {
+								Message.postMessage(message, `Your leave request has been sent to admins for approval\n*Request Id : * *\`${newLeaveReport.leaveCode}\`*\n Sit back and relax I will notify you when I get update on this request.`);
 								const adminIMS = [];
 								config.admin.forEach((admin) => {
 									const ims = _.find(payloadIms, { user: user.id });
 									adminIMS.push(ims.id);
 								});
 								adminIMS.forEach((channelId) => {
-									Message.postLeaveMessageToAdmin(channelId, user, leaveReport);
+									Message.postLeaveMessageToAdmin(channelId, user, newLeaveReport);
 								});
 							})
 							.catch((e) => {
@@ -350,6 +363,59 @@ bot.message((message) => {
 						Message.postErrorMessage(message, new Error('You are not a good reader. Help command clearly says DD-MM-YYYY format :wink:'));
 					}
 				}
+				break;
+			case 'LEAVEACCEPT':
+				let leaveDoc;
+				let acceptCommand = [];
+				acceptCommand = message.text.split(' ');
+				LeaveMdl.getLeaveRequest(acceptCommand[1])
+				.then((leaveDataDoc) => {
+					leaveDoc = leaveDataDoc;
+					if (leaveDoc.isApproved) {
+						Message.postErrorMessage(message, new Error('\nYou have alreay accepted this request'));
+						return false;
+					} else {
+						return LeaveMdl.updateLeaveRequest(leaveDoc._id, true);
+					}
+				})
+				.then((leaveDataDoc) => {
+					if (leaveDataDoc) {
+						leaveDoc.isApproved = true;
+						const userChannel = _.find(payloadIms, { user: leaveDoc.id });
+						Message.postLeaveStatusMessage(userChannel.id, leaveDoc);
+					}
+				})
+				.catch((e) => {
+					Message.postErrorMessage(message, new Error('\nThere is some problem serving you request. Please try again till then I will repair myself.'));
+				});
+				break;
+			case 'LEAVEREJECT':
+				let leaveDocument;
+				let rejectCommand = [];
+				rejectCommand = message.text.split(' ');
+				LeaveMdl.getLeaveRequest(rejectCommand[1])
+				.then((leaveDataDoc) => {
+					leaveDocument = leaveDataDoc;
+					if (leaveDocument.isApproved === false) {
+						Message.postErrorMessage(message, new Error('\nYou have alreay rejected this request'));
+						return false;
+					} else {
+						return LeaveMdl.updateLeaveRequest(leaveDocument._id, false);
+					}
+				})
+				.then((leaveDataDoc) => {
+					if (leaveDataDoc) {
+						leaveDocument.isApproved = false;
+						const userChannel = _.find(payloadIms, { user: leaveDocument.id });
+						Message.postLeaveStatusMessage(userChannel.id, leaveDocument);
+					}
+				})
+			.catch((e) => {
+				Message.postErrorMessage(message, new Error('\nThere is some problem serving you request. Please try again till then I will repair myself.'));
+			});
+				break;
+			case 'LEAVEREPORT':
+				leaveReport(message);
 				break;
 			case 'EXCEL':
 				try {
@@ -507,6 +573,21 @@ function specificReport(message, timePeriod, start, end) {
 				Message.postSpecificReport(timesheet, attachment, timePeriod, message);
 				attachment = [];
 			});
+		}
+	} catch (e) {
+		log.saveLogs(message.user, e, moment());
+	}
+}
+
+function leaveReport(message) {
+	try {
+		spaceIndex = message.text.indexOf(' ');
+		userId = message.text.substr(spaceIndex + 3, 9);
+		userTemp = _.find(users, (o) => { return o.id === userId; });
+		if (userTemp.id !== userId) {
+			Message.postErrorMessage(message, new Error('USER NOT FOUND'));
+		} else {
+			Message.postLeaveReport(message, userId);
 		}
 	} catch (e) {
 		log.saveLogs(message.user, e, moment());

@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const log = require('../helper/logger');
 
 function genRand() {
-	return Math.floor((Math.random() * 89999) + 10000);
+	return Math.floor((Math.random() * 89999999) + 10000000);
 }
 
 module.exports = {
@@ -19,7 +19,6 @@ module.exports = {
 				toDate,
 				fromDate,
 				reason,
-				isApproved: false,
 				leaveCode: genRand()
 			};
 			leaveRequest = new LeaveMdl(leaveRequest);
@@ -29,6 +28,27 @@ module.exports = {
 					reject(err);
 				}
 				resolve(response);
+			});
+		});
+	},
+
+	getLeaveRequest: (leaveCode) => {
+		return new Promise((resolve, reject) => {
+			const query = LeaveMdl.findOne({
+				leaveCode
+			});
+			query.exec((err, timesheet) => {
+				if (err) reject(err);
+				resolve(timesheet);
+			});
+		});
+	},
+
+	updateLeaveRequest: (docId, isApproved) => {
+		return new Promise((resolve, reject) => {
+			LeaveMdl.update({ _id: docId }, { isApproved }, (err, leaveReqest) => {
+				if (err) reject(err);
+				resolve(leaveReqest);
 			});
 		});
 	}

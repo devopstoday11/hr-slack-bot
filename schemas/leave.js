@@ -9,8 +9,8 @@ const leaveSchema = new Schema({
 	toDate: { type: Date },
 	fromDate: { type: Date },
 	reason: { type: String },
-	isApproved: { type: Boolean },
-	leaveCode: { type: Number },
+	isApproved: { type: Boolean, default: null },
+	leaveCode: { type: Number, index: true },
 });
 
 const LeaveMdl = mongoose.model('Leave', leaveSchema);
