@@ -1,7 +1,12 @@
 const slack = require('slack');
+const excel = require('node-excel-export');
+const fs = require('fs');
+const request = require('request');
 const DB = require('../models');
+const LeaveMdl = require('../schemas/leave');
 const config = require('../config');
 const log = require('../helper/logger');
+const DateHelper = require('../helper/date_parser');
 
 module.exports = {
 	postSpecificReport: (timesheet, attachment, timePeriod, message) => {
@@ -256,4 +261,189 @@ module.exports = {
 			}
 		});
 	},
+
+	postLeaveMessageToAdmin: (channelId, user, leaveReport) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: channelId,
+			title: 'Title',
+			text: `*${user.real_name}* has requested for leave.\n*Accept :* \`leaveaccept ${leaveReport.leaveCode}\`\n*Reject :* \`leavereject ${leaveReport.leaveCode}\``,
+			as_user: true,
+			attachments: [
+				{
+					color: '#439FE0',
+					mrkdwn_in: ['text', 'fields'],
+					fields: [
+						{
+							title: 'Leave From',
+							value: `*\`${DateHelper.getDateAsDDMMYYYY(leaveReport.fromDate)}\`*`,
+							short: true
+						},
+						{
+							title: 'Leave To',
+							value: `*\`${DateHelper.getDateAsDDMMYYYY(leaveReport.toDate)}\`*`,
+							short: true
+						},
+						{
+							title: 'Reason',
+							value: `${leaveReport.reason}`,
+							short: false
+						}
+					],
+					thumb_url: user.image_192,
+				}
+			] }, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs(user.userRealname, errSave, new Date());
+			}
+		});
+	},
+
+	postLeaveStatusMessage: (channelId, leaveReport) => {
+		const leaveStatus = leaveReport.isApproved ? 'Accepted' : 'Rejected';
+		slack.chat.postMessage({
+			token: config.token,
+			channel: channelId,
+			title: 'Title',
+			text: `Hey ${leaveReport.real_name},\nYour following request has been ${leaveStatus}`,
+			as_user: true,
+			attachments: [
+				{
+					color: '#439FE0',
+					mrkdwn_in: ['text', 'fields'],
+					fields: [
+						{
+							title: 'Leave From',
+							value: `*\`${DateHelper.getDateAsDDMMYYYY(leaveReport.fromDate)}\`*`,
+							short: true
+						},
+						{
+							title: 'Leave To',
+							value: `*\`${DateHelper.getDateAsDDMMYYYY(leaveReport.toDate)}\`*`,
+							short: true
+						},
+						{
+							title: 'Reason',
+							value: `${leaveReport.reason}`,
+							short: false
+						}, {
+							title: 'Status',
+							value: `\`${leaveStatus}\``,
+							short: false
+						}
+					],
+				}
+			] }, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs(leaveReport.real_name, errSave, new Date());
+			}
+		});
+	},
+
+	postLeaveReport: (message, userId) => {
+		LeaveMdl.find({ id: userId }).sort({ toDate: 1 }).exec((err, leaveDocs) => {
+			if (err) {
+				module.exports.postErrorMessage(message, new Error('Please Try again later'));
+			} else {
+				try {
+					const styles = {
+						headerDark: {
+							fill: {
+								fgColor: {
+									rgb: 'C0C0C0'
+								},
+								sz: 15,
+								height: 20
+							},
+							font: {
+								color: {
+									rgb: '000000'
+								},
+								sz: 14,
+								bold: true,
+								underline: true
+							}
+						}
+					};
+				// Array of objects representing heading rows (very top)
+				// Here you specify the export structure
+					const specification = {
+						from: {
+							displayName: 'From Date',
+							headerStyle: styles.headerDark,
+							width: '20'
+						},
+						to: {
+							displayName: 'To Date',
+							headerStyle: styles.headerDark,
+							width: '20'
+						},
+						reason: {
+							displayName: 'Reason',
+							headerStyle: styles.headerDark,
+							width: '20'
+						},
+						code: {
+							displayName: 'Code',
+							headerStyle: styles.headerDark,
+							width: '20'
+						},
+						status: {
+							displayName: 'Status',
+							headerStyle: styles.headerDark,
+							width: '20'
+						}
+					};
+					const dataset = [];
+					let datasetTemp = [];
+					if (typeof leaveDocs[0] === 'undefined') {
+						throw new Error('No data to fetch!');
+					}
+					const heading = [
+					[{ value: 'Name', style: styles.headerDark }, { value: 'User Name', style: styles.headerDark }],
+					[`${leaveDocs[0].real_name}\t`, `${leaveDocs[0].name}`]
+					];
+					leaveDocs.forEach((t, index) => {
+						datasetTemp = {
+							from: DateHelper.getDateAsDDMMYYYY(t.fromDate),
+							to: DateHelper.getDateAsDDMMYYYY(t.toDate),
+							reason: t.reason,
+							code: t.leaveCode,
+							status: t.isApproved ? 'Accepted' : 'Rejected',
+						};
+						dataset.push(datasetTemp);
+					});
+					const report = excel.buildExport(
+						[
+							{
+								name: leaveDocs[0].name,
+								heading,
+								specification,
+								data: dataset
+							}
+						]
+					);
+					fs.writeFile(`${__dirname}/../sheets/${leaveDocs[0].name}_leave.xlsx`, report, (res2, error) => {
+						if (error) log.saveLogs(message.user, error, new Date());
+						request.post({
+							url: 'https://slack.com/api/files.upload',
+							formData: {
+								token: config.token,
+								title: 'User Report',
+								filename: `${leaveDocs[0].name}.xlsx`,
+								filetype: 'auto',
+								channels: message.channel,
+								file: fs.createReadStream(`${__dirname}/../sheets/${leaveDocs[0].name}_leave.xlsx`),
+							},
+						}, (messageError, response) => {
+							if (messageError) log.saveLogs(message.user, messageError, new Date());
+						});
+					});
+				} catch (tryError) {
+					log.saveLogs(message.user, tryError, new Date());
+					module.exports.postErrorMessage(message, err);
+				}
+			}
+		});
+	}
 };
