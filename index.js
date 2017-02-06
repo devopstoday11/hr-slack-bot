@@ -347,7 +347,9 @@ bot.message((message) => {
 								const adminIMS = [];
 								config.admin.forEach((admin) => {
 									const ims = _.find(payloadIms, { user: admin });
-									adminIMS.push(ims.id);
+									if (ims) {
+										adminIMS.push(ims.id);
+									}
 								});
 								adminIMS.forEach((channelId) => {
 									Message.postLeaveMessageToAdmin(channelId, user, newLeaveReport);
