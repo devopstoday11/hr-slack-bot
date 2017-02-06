@@ -346,7 +346,7 @@ bot.message((message) => {
 								Message.postMessage(message, `Your leave request has been sent to admins for approval\n*Request Id : * *\`${newLeaveReport.leaveCode}\`*\n Sit back and relax I will notify you when I get update on this request.`);
 								const adminIMS = [];
 								config.admin.forEach((admin) => {
-									const ims = _.find(payloadIms, { user: user.id });
+									const ims = _.find(payloadIms, { user: admin });
 									adminIMS.push(ims.id);
 								});
 								adminIMS.forEach((channelId) => {
@@ -382,7 +382,8 @@ bot.message((message) => {
 					if (leaveDataDoc) {
 						leaveDoc.isApproved = true;
 						const userChannel = _.find(payloadIms, { user: leaveDoc.id });
-						Message.postLeaveStatusMessage(userChannel.id, leaveDoc);
+						Message.postLeaveStatusMessage(userChannel.id, leaveDoc, message);
+						Message.postMessage(message, 'Leave has been *`accepted`*');
 					}
 				})
 				.catch((e) => {
@@ -408,6 +409,7 @@ bot.message((message) => {
 						leaveDocument.isApproved = false;
 						const userChannel = _.find(payloadIms, { user: leaveDocument.id });
 						Message.postLeaveStatusMessage(userChannel.id, leaveDocument);
+						Message.postMessage(message, 'Leave has been *`rejected`*');
 					}
 				})
 			.catch((e) => {

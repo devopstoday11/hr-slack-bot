@@ -19,6 +19,7 @@ module.exports = {
 				toDate,
 				fromDate,
 				reason,
+				days: Math.floor((toDate - fromDate) / 86400000) + 1,
 				leaveCode: genRand()
 			};
 			leaveRequest = new LeaveMdl(leaveRequest);

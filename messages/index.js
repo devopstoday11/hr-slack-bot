@@ -293,6 +293,11 @@ module.exports = {
 							short: true
 						},
 						{
+							title: 'Days',
+							value: `${leaveReport.days}`,
+							short: false
+						},
+						{
 							title: 'Reason',
 							value: `${leaveReport.reason}`,
 							short: false
@@ -313,7 +318,7 @@ module.exports = {
 			token: config.token,
 			channel: channelId,
 			title: 'Title',
-			text: `Hey ${leaveReport.real_name},\nYour following request has been ${leaveStatus}`,
+			text: `Hey ${leaveReport.real_name},\nYour following request has been *\`${leaveStatus}\`*`,
 			as_user: true,
 			attachments: [
 				{
@@ -329,6 +334,11 @@ module.exports = {
 							title: 'Leave To',
 							value: `*\`${DateHelper.getDateAsDDMMYYYY(leaveReport.toDate)}\`*`,
 							short: true
+						},
+						{
+							title: 'Days',
+							value: `${leaveReport.days}`,
+							short: false
 						},
 						{
 							title: 'Reason',
@@ -386,6 +396,11 @@ module.exports = {
 							headerStyle: styles.headerDark,
 							width: '20'
 						},
+						days: {
+							displayName: 'Days',
+							headerStyle: styles.headerDark,
+							width: '20'
+						},
 						reason: {
 							displayName: 'Reason',
 							headerStyle: styles.headerDark,
@@ -415,6 +430,7 @@ module.exports = {
 						datasetTemp = {
 							from: DateHelper.getDateAsDDMMYYYY(t.fromDate),
 							to: DateHelper.getDateAsDDMMYYYY(t.toDate),
+							days: t.days,
 							reason: t.reason,
 							code: t.leaveCode,
 							status: t.isApproved ? 'Accepted' : 'Rejected',

@@ -9,6 +9,7 @@ const leaveSchema = new Schema({
 	toDate: { type: Date },
 	fromDate: { type: Date },
 	reason: { type: String },
+	days: { type: Number },
 	isApproved: { type: Boolean, default: null },
 	leaveCode: { type: Number, index: true },
 });
