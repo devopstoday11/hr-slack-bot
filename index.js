@@ -370,6 +370,7 @@ bot.message((message) => {
 				let leaveDoc;
 				let acceptCommand = [];
 				acceptCommand = message.text.split(' ');
+				const note = acceptCommand.slice(2, acceptCommand.length).join(' ');
 				LeaveMdl.getLeaveRequest(acceptCommand[1])
 				.then((leaveDataDoc) => {
 					leaveDoc = leaveDataDoc;
@@ -377,14 +378,15 @@ bot.message((message) => {
 						Message.postErrorMessage(message, new Error('\nYou have alreay accepted this request'));
 						return false;
 					} else {
-						return LeaveMdl.updateLeaveRequest(leaveDoc._id, true);
+						return LeaveMdl.updateLeaveRequest(leaveDoc._id, true, note);
 					}
 				})
 				.then((leaveDataDoc) => {
 					if (leaveDataDoc) {
 						leaveDoc.isApproved = true;
+						leaveDoc.note = note;
 						const userChannel = _.find(payloadIms, { user: leaveDoc.id });
-						Message.postLeaveStatusMessage(userChannel.id, leaveDoc, message);
+						Message.postLeaveStatusMessage(userChannel.id, leaveDoc);
 						Message.postMessage(message, 'Leave has been *`accepted`*');
 					}
 				})
@@ -396,6 +398,7 @@ bot.message((message) => {
 				let leaveDocument;
 				let rejectCommand = [];
 				rejectCommand = message.text.split(' ');
+				const rejectNote = rejectCommand.slice(2, rejectCommand.length).join(' ');
 				LeaveMdl.getLeaveRequest(rejectCommand[1])
 				.then((leaveDataDoc) => {
 					leaveDocument = leaveDataDoc;
@@ -403,12 +406,13 @@ bot.message((message) => {
 						Message.postErrorMessage(message, new Error('\nYou have alreay rejected this request'));
 						return false;
 					} else {
-						return LeaveMdl.updateLeaveRequest(leaveDocument._id, false);
+						return LeaveMdl.updateLeaveRequest(leaveDocument._id, false, rejectNote);
 					}
 				})
 				.then((leaveDataDoc) => {
 					if (leaveDataDoc) {
 						leaveDocument.isApproved = false;
+						leaveDocument.note = rejectNote;
 						const userChannel = _.find(payloadIms, { user: leaveDocument.id });
 						Message.postLeaveStatusMessage(userChannel.id, leaveDocument);
 						Message.postMessage(message, 'Leave has been *`rejected`*');

@@ -347,7 +347,11 @@ module.exports = {
 						}, {
 							title: 'Status',
 							value: `\`${leaveStatus}\``,
-							short: false
+							short: true
+						}, {
+							title: 'Action Reason',
+							value: `\`${leaveReport.note}\``,
+							short: true
 						}
 					],
 				}

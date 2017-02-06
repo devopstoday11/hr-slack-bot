@@ -12,6 +12,7 @@ const leaveSchema = new Schema({
 	days: { type: Number },
 	isApproved: { type: Boolean, default: null },
 	leaveCode: { type: Number, index: true },
+	note: { type: String },
 });
 
 const LeaveMdl = mongoose.model('Leave', leaveSchema);
