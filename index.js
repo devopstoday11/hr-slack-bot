@@ -74,7 +74,7 @@ const userCheckIn = new CronJob({
 				if (moment().format('HH').toString() === '08') {
 					text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command\n\n*\`I HAVE UPDATED MYSELF WITH NEW FEATURE. TYPE HELP TO KNOW MORE\`*`;
 				} else {
-					text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\nIf you have any suggestion, queries or concern then please contact administrator\n Inputs are always welcomed`;
+					text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\nIf you have any suggestion, queries or concern then please contact administrator\n Inputs are always welcomed\n\nUse *LEAVE FROMDATE(DD-MM-YYYY) TODATE(DD-MM-YYYY) REASON* for submitting leave \nexa. leave 6-2-2017 8-2-2017 going to home for family function`;
 				}
 				slack.chat.postMessage({
 					token: config.token,
