@@ -235,13 +235,13 @@ module.exports = {
 			channel: message.channel,
 			title: 'HELP DESK',
 			fallback: 'HELP DESK',
-			text: 'Alway ready to help',
+			text: 'Always happy to help\n',
 			as_user: true,
 			attachments: [
 				{
 					fallback: 'IN',
 					color: '#36a64f',
-					pretext: 'Entering in the office',
+					pretext: 'Once entered the office',
 					author_name: 'Command',
 					title: 'IN / IN HH:MM',
 					text: 'If you are entering in command and want to keep in time as the current time then enter only IN and if you want to change in time than current time then please provide  time in HH:MM formate after IN'
@@ -249,7 +249,7 @@ module.exports = {
 				{
 					fallback: 'OUT',
 					color: '#0000ff',
-					pretext: 'While Leaving in the office',
+					pretext: 'When Leaving the office',
 					author_name: 'Command',
 					title: 'OUT / OUT HH:MM',
 					text: 'Timing rules are same as IN command'
