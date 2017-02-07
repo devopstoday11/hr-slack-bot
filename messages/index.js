@@ -275,7 +275,7 @@ module.exports = {
 			token: config.token,
 			channel: channelId,
 			title: 'Title',
-			text: `*${user.real_name}* has requested for leave.\n*Accept :* \`leaveaccept ${leaveReport.leaveCode}\`\n*Reject :* \`leavereject ${leaveReport.leaveCode}\``,
+			text: `*${user.real_name}* has requested for leave.\n*Accept :* \`leaveaccept ${leaveReport.leaveCode} your notes\`\n*Reject :* \`leavereject ${leaveReport.leaveCode} your notes\``,
 			as_user: true,
 			attachments: [
 				{
