@@ -34,11 +34,13 @@ let	commands;
 let attachment = [];
 let attach;
 let payloadIms;
-
+let leaveDays = 0;
+let reminder = false;
+let leaveReasons;
 bot.started((payload) => {
 	const payloadUsers = payload.users;
 	payloadIms = payload.ims;
-	// console.log(payloadIms);
+	console.log(payloadIms);
 	payloadUsers.forEach((user) => {
 		if (!user.is_bot && user.name !== 'slackbot') {
 			user.image_192 = user.profile.image_192;
@@ -63,32 +65,41 @@ bot.started((payload) => {
 });
 
 const userCheckIn = new CronJob({
-	cronTime: '0 30 8,18 * * 1-6',
+	cronTime: '*/10 * * * * *',
 	// cronTime: '*/10 * * * * *',
 	onTick() {
 		let text = '';
-
-		payloadIms.forEach((ims) => {
-			const user = _.find(users, { id: ims.user });
-			if (user) {
-				if (moment().format('HH').toString() === '08') {
-					text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command\n\n*\`I HAVE UPDATED MYSELF WITH NEW FEATURE. TYPE HELP TO KNOW MORE\`*`;
-				} else {
-					text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\nIf you have any suggestion, queries or concern then please contact administrator\n Inputs are always welcomed\n\nUse *LEAVE FROMDATE(DD-MM-YYYY) TODATE(DD-MM-YYYY) REASON* for submitting leave \nexa. leave 6-2-2017 8-2-2017 going to home for family function`;
-				}
-				slack.chat.postMessage({
-					token: config.token,
-					channel: ims.id,
-					as_user: true,
-					title: 'Title',
-					text,
-				}, (errSave, data) => {
-					if (errSave) {
-						log.saveLogs('Cron JOB', errSave, moment());
+		if (reminder || leaveDays === 0) {
+			payloadIms.forEach((ims) => {
+				const user = _.find(users, { id: ims.user });
+				if (user) {
+					if (moment().format('HH').toString() === '08') {
+						text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command\n\n*\`I HAVE UPDATED MYSELF WITH NEW FEATURE. TYPE HELP TO KNOW MORE\`*`;
+					} else {
+						text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\nIf you have any suggestion, queries or concern then please contact administrator\n Inputs are always welcomed\n\nUse *LEAVE FROMDATE(DD-MM-YYYY) TODATE(DD-MM-YYYY) REASON* for submitting leave \nexa. leave 6-2-2017 8-2-2017 going to home for family function`;
 					}
-				});
-			}
-		});
+					if (reminder === true) {
+						console.log('better Reminder');
+						text = `${text}\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} due to ${leaveReasons}\`*\n I will miss you. enjoy holiday:confetti_ball::tada:`;
+						reminder = false;
+						leaveDays -= 1;
+					}
+					slack.chat.postMessage({
+						token: config.token,
+						channel: ims.id,
+						as_user: true,
+						title: 'Title',
+						text,
+					}, (errSave, data) => {
+						if (errSave) {
+							log.saveLogs('Cron JOB', errSave, moment());
+						}
+					});
+				}
+			});
+		} else {
+			leaveDays -= 1;
+		}
 	},
 	start: false,
 	timeZone: 'Asia/Kolkata'
@@ -159,9 +170,17 @@ bot.message((message) => {
 					if (message.text.toLowerCase().indexOf('leave ') === 0) {
 						testCase = 'LEAVE';
 					} else if (message.text.toLowerCase().indexOf('leaveaccept ') === 0) {
-						testCase = 'LEAVEACCEPT';
+						if (_.find(config.admin, (o) => { return o === message.user; })) {
+							testCase = 'LEAVEACCEPT';
+						} else {
+							testCase = 'UNAUTHORIZED';
+						}
 					} else if (message.text.toLowerCase().indexOf('leavereject ') === 0) {
-						testCase = 'LEAVEREJECT';
+						if (_.find(config.admin, (o) => { return o === message.user; })) {
+							testCase = 'LEAVEREJECT';
+						} else {
+							testCase = 'UNAUTHORIZED';
+						}
 					} else if (message.text.toLowerCase().indexOf('leavereport ') === 0) {
 						if (message.text.toLowerCase().indexOf('leavereport <@') === 0) {
 							if (_.find(config.admin, (o) => { return o === message.user; })) {
@@ -172,11 +191,11 @@ bot.message((message) => {
 						} else {
 							testCase = 'WRONG';
 						}
+					} else if (message.text.toLowerCase().indexOf('leaveset ') === 0) {
+						testCase = 'LEAVESET';
 					} else {
-						testCase = 'WRONG';
+						testCase = 'TASK_IN_OUT';
 					}
-				} else {
-					testCase = 'TASK_IN_OUT';
 				}
 			} catch (err) {
 				log.saveLogs(message.user, err, moment());
@@ -424,6 +443,25 @@ bot.message((message) => {
 				break;
 			case 'LEAVEREPORT':
 				leaveReport(message);
+				break;
+			case 'LEAVESET':
+				const setLeaveCommand = message.text.split(' ');
+				if (setLeaveCommand.length >= 3) {
+					console.log('Hours : ', parseInt(moment().format('HH'), 10));
+					if (parseInt(moment().format('HH'), 10) < 19) {
+						leaveDays = (parseInt(setLeaveCommand[1], 10) * 2) + 1;
+						leaveReasons = setLeaveCommand.slice(2, setLeaveCommand.length).join(' ');
+						reminder = true;
+						console.log({ leaveDays });
+						console.log({ leaveReasons });
+						console.log({ reminder });
+					} else {
+						Message.postErrorMessage(message, new Error(':joy: \nCan not add holiday after 18:00'));
+					}
+				} else {
+					Message.postErrorMessage(message, new Error(':joy: \nInvalid Command'));
+				}
+
 				break;
 			case 'EXCEL':
 				try {
