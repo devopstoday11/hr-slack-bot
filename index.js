@@ -40,7 +40,6 @@ let leaveReasons;
 bot.started((payload) => {
 	const payloadUsers = payload.users;
 	payloadIms = payload.ims;
-	console.log(payloadIms);
 	payloadUsers.forEach((user) => {
 		if (!user.is_bot && user.name !== 'slackbot') {
 			user.image_192 = user.profile.image_192;
@@ -192,10 +191,16 @@ bot.message((message) => {
 							testCase = 'WRONG';
 						}
 					} else if (message.text.toLowerCase().indexOf('leaveset ') === 0) {
-						testCase = 'LEAVESET';
+						if (_.find(config.admin, (o) => { return o === message.user; })) {
+							testCase = 'LEAVESET';
+						} else {
+							testCase = 'UNAUTHORIZED';
+						}
 					} else {
-						testCase = 'TASK_IN_OUT';
+						testCase = 'WRONG';
 					}
+				} else {
+					testCase = 'TASK_IN_OUT';
 				}
 			} catch (err) {
 				log.saveLogs(message.user, err, moment());
