@@ -78,7 +78,6 @@ const userCheckIn = new CronJob({
 						text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\nIf you have any suggestion, queries or concern then please contact administrator\n Inputs are always welcomed\n\nUse *LEAVE FROMDATE(DD-MM-YYYY) TODATE(DD-MM-YYYY) REASON* for submitting leave \nexa. leave 6-2-2017 8-2-2017 going to home for family function`;
 					}
 					if (reminder === true) {
-						console.log('better Reminder');
 						text = `${text}\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} due to ${leaveReasons}\`*\n I will miss you. enjoy holiday:confetti_ball::tada:`;
 						reminder = false;
 						leaveDays -= 1;
@@ -118,7 +117,6 @@ const userCheckIn = new CronJob({
  */
 bot.message((message) => {
 	let user = {};
-	// console.log(message);
 	if (!message.subtype) {
 		user = _.find(users, { id: message.user });
 	} else if (message.subtype === 'message_changed') {
@@ -452,14 +450,10 @@ bot.message((message) => {
 			case 'LEAVESET':
 				const setLeaveCommand = message.text.split(' ');
 				if (setLeaveCommand.length >= 3) {
-					console.log('Hours : ', parseInt(moment().format('HH'), 10));
-					if (parseInt(moment().format('HH'), 10) < 19) {
+					if (parseInt(moment().format('HH'), 10) < 18) {
 						leaveDays = (parseInt(setLeaveCommand[1], 10) * 2) + 1;
 						leaveReasons = setLeaveCommand.slice(2, setLeaveCommand.length).join(' ');
 						reminder = true;
-						console.log({ leaveDays });
-						console.log({ leaveReasons });
-						console.log({ reminder });
 					} else {
 						Message.postErrorMessage(message, new Error(':joy: \nCan not add holiday after 18:00'));
 					}
