@@ -6,6 +6,7 @@ const moment = require('moment');
 const _ = require('lodash');
 const excel = require('node-excel-export');
 const CronJob = require('cron').CronJob;
+const apiai = require('apiai');
 
 const config = require('./config');
 const mongoose = require('mongoose');
@@ -19,12 +20,14 @@ const log = require('./helper/logger');
 const links = require('./messages/links');
 const DateHelper = require('./helper/date_parser');
 
+
 mongoose.connect(config.mongoURL);
 
 const bot = slack.rtm.client();
 const token = config.token;
 const timeRegex = new RegExp('^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
 const users = [];
+const app = apiai('7183a745aea24e22a5b865db43abba57');
 
 let time;
 let	spaceIndex;
@@ -211,6 +214,7 @@ bot.message((message) => {
 				testCase = 'MESSAGE_EDIT';
 			}
 		}
+
 		switch (testCase) {
 			case 'IN' :
 				DB.getTodayTimesheet(message.user)
@@ -306,7 +310,19 @@ bot.message((message) => {
 										log.saveLogs(message.user, err, moment());
 									});
 							} else {
-								throw new Error('You confused me :sweat_smile: \n\n You have already added tasks\nso can\'t add more tasks but if you have changed your mind or something came up then please edit old task message :wink: ');
+								const request1 = app.textRequest(message.text, {
+									sessionId: message.user
+								});
+
+								request1.on('response', (response) => {
+									Message.postMessage(message, response.result.fulfillment.speech);
+								});
+
+								request1.on('error', (error) => {
+									console.log(error);
+								});
+
+								request1.end();
 							}
 						} else {
 							throw new Error('You first need to enter in the office to start conversation :wink:');
