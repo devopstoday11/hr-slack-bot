@@ -27,7 +27,7 @@ const bot = slack.rtm.client();
 const token = config.token;
 const timeRegex = new RegExp('^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
 const users = [];
-const app = apiai('7183a745aea24e22a5b865db43abba57');
+const app = apiai(config.apiai);
 
 let time;
 let	spaceIndex;
