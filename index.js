@@ -76,9 +76,9 @@ const userCheckIn = new CronJob({
 				const user = _.find(users, { id: ims.user });
 				if (user) {
 					if (moment().format('HH').toString() === '08') {
-						text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command\n\n*\`I HAVE UPDATED MYSELF WITH NEW FEATURE. TYPE HELP TO KNOW MORE\`*`;
+						text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command\n\n*\`I have upgraded to next version\nNow you can talk with me too.I will do my best to answer your queries\`*`;
 					} else {
-						text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\nIf you have any suggestion, queries or concern then please contact administrator\n Inputs are always welcomed\n\nUse *LEAVE FROMDATE(DD-MM-YYYY) TODATE(DD-MM-YYYY) REASON* for submitting leave \nexa. leave 6-2-2017 8-2-2017 going to home for family function`;
+						text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\n`;
 					}
 					if (reminder === true) {
 						text = `${text}\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} due to ${leaveReasons}\`*\n I will miss you. enjoy holiday:confetti_ball::tada:`;
