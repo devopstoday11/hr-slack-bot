@@ -363,7 +363,7 @@ bot.message((message) => {
 				Message.postErrorMessage(message, new Error('You can only edit task listing messages! :sweat_smile:'));
 				break;
 			case 'WRONG':
-				Message.postErrorMessage(message, new Error(':joy: \nInvalid Command'));
+				Message.postErrorMessage(message, new Error(':confused: \nInvalid Command'));
 				break;
 			case 'UNAUTHORIZED':
 				Message.postErrorMessage(message, new Error('\nNo No No !!! It\'s Rescricted area ....!! :rage:'));
@@ -471,10 +471,10 @@ bot.message((message) => {
 						leaveReasons = setLeaveCommand.slice(2, setLeaveCommand.length).join(' ');
 						reminder = true;
 					} else {
-						Message.postErrorMessage(message, new Error(':joy: \nCan not add holiday after 18:00'));
+						Message.postErrorMessage(message, new Error(':confused: \nCan not add holiday after 18:00'));
 					}
 				} else {
-					Message.postErrorMessage(message, new Error(':joy: \nInvalid Command'));
+					Message.postErrorMessage(message, new Error(':confused: \nInvalid Command'));
 				}
 
 				break;
