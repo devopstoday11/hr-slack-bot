@@ -6,6 +6,7 @@ const moment = require('moment');
 const _ = require('lodash');
 const excel = require('node-excel-export');
 const CronJob = require('cron').CronJob;
+const apiai = require('apiai');
 
 const config = require('./config');
 const mongoose = require('mongoose');
@@ -19,12 +20,14 @@ const log = require('./helper/logger');
 const links = require('./messages/links');
 const DateHelper = require('./helper/date_parser');
 
+
 mongoose.connect(config.mongoURL);
 
 const bot = slack.rtm.client();
 const token = config.token;
 const timeRegex = new RegExp('^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
 const users = [];
+const app = apiai(config.apiai);
 
 let time;
 let	spaceIndex;
@@ -73,9 +76,9 @@ const userCheckIn = new CronJob({
 				const user = _.find(users, { id: ims.user });
 				if (user) {
 					if (moment().format('HH').toString() === '08') {
-						text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command\n\n*\`I HAVE UPDATED MYSELF WITH NEW FEATURE. TYPE HELP TO KNOW MORE\`*`;
+						text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command\n\n*\`I have upgraded to next version\nNow you can talk with me too.I will do my best to answer your queries\`*`;
 					} else {
-						text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\nIf you have any suggestion, queries or concern then please contact administrator\n Inputs are always welcomed\n\nUse *LEAVE FROMDATE(DD-MM-YYYY) TODATE(DD-MM-YYYY) REASON* for submitting leave \nexa. leave 6-2-2017 8-2-2017 going to home for family function`;
+						text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\n`;
 					}
 					if (reminder === true) {
 						text = `${text}\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} due to ${leaveReasons}\`*\n I will miss you. enjoy holiday:confetti_ball::tada:`;
@@ -211,6 +214,7 @@ bot.message((message) => {
 				testCase = 'MESSAGE_EDIT';
 			}
 		}
+
 		switch (testCase) {
 			case 'IN' :
 				DB.getTodayTimesheet(message.user)
@@ -306,7 +310,19 @@ bot.message((message) => {
 										log.saveLogs(message.user, err, moment());
 									});
 							} else {
-								throw new Error('You confused me :sweat_smile: \n\n You have already added tasks\nso can\'t add more tasks but if you have changed your mind or something came up then please edit old task message :wink: ');
+								const request1 = app.textRequest(message.text, {
+									sessionId: message.user
+								});
+
+								request1.on('response', (response) => {
+									Message.postMessage(message, response.result.fulfillment.speech);
+								});
+
+								request1.on('error', (error) => {
+									console.log(error);
+								});
+
+								request1.end();
 							}
 						} else {
 							throw new Error('You first need to enter in the office to start conversation :wink:');
