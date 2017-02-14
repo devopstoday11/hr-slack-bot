@@ -378,7 +378,7 @@ bot.message((message) => {
 					const toDate = DateHelper.parseDate(res[2]);
 					const reason = res.slice(3, res.length).join(' ');
 					if (toDate && fromDate) {
-						if (fromDate.getTime() < toDate.getTime()) {
+						if (fromDate.getTime() <= toDate.getTime()) {
 							LeaveMdl.saveLeaveRequest(user, toDate, fromDate, reason)
 							.then((newLeaveReport) => {
 								Message.postMessage(message, `Your leave request has been sent to admins for approval\n*Request Id : * *\`${newLeaveReport.leaveCode}\`*\n Sit back and relax I will notify you when I get update on this request.`);
