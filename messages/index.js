@@ -260,7 +260,7 @@ module.exports = {
 					pretext: 'For requesting leave',
 					author_name: 'Command',
 					title: 'LEAVE FROMDATE(DD-MM-YYYY) TODATE(DD-MM-YYYY) REASON',
-					text: 'Ex. leave 6-2-2017 8-2-2017 going to home for family function\n It will be sent to hr and admins for review'
+					text: 'Ex. leave 6-2-2017 8-2-2017 going to home for family function\n It will be sent to hr and admins for review \n For one day leave keep to and from date same'
 				}
 			]
 		}, (errSave, data) => {

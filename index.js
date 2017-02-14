@@ -371,8 +371,8 @@ bot.message((message) => {
 			case 'LEAVE':
 				let res = [];
 				res = message.text.split(' ');
-				if (!res.length >= 4) {
-					Message.postErrorMessage(message, new Error('\nNo No No !!! Invalid command :rage:'));
+				if (res.length < 4) {
+					Message.postErrorMessage(message, new Error('\nNo No No !!! Invalid command :rage: Type help to get exact command that I understand'));
 				} else {
 					const fromDate = DateHelper.parseDate(res[1]);
 					const toDate = DateHelper.parseDate(res[2]);
