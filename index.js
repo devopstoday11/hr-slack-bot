@@ -229,7 +229,7 @@ bot.message((message) => {
 						time = moment().format('HH:mm');
 					} else {
 						spaceIndex = message.text.indexOf(' ');
-						if (message.text.substr(0, spaceIndex) === 'in') {
+						if (message.text.substr(0, spaceIndex).toLowerCase() === 'in') {
 							time = message.text.substr(spaceIndex + 1);
 							if (!timeRegex.test(time)) {
 								throw new Error('Please enter valid time in HH:MM format.\nThe 24-hour clock was developed by ancient Egyptians, So please don\'t disrespect them and please enter valid time');
@@ -256,7 +256,6 @@ bot.message((message) => {
 				break;
 
 			case 'OUT':
-
 				DB.getTodayTimesheet(message.user)
 				.then((timesheet) => {
 					if (!timesheet) {
