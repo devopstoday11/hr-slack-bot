@@ -9,6 +9,7 @@ const userSchema = new Schema({
 	image_192: { type: String },
 	createdAt: { type: Date, default: Date.now },
 });
+
 const UserMdl = mongoose.model('User', userSchema);
 
 module.exports = UserMdl;
