@@ -20,7 +20,6 @@ const log = require('./helper/logger');
 const links = require('./messages/links');
 const DateHelper = require('./helper/date_parser');
 
-
 mongoose.connect(config.mongoURL);
 
 const bot = slack.rtm.client();
