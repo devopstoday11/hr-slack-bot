@@ -6,7 +6,7 @@ Feature="$(tr '[:lower:]' '[:upper:]' <<< ${feature:0:1})${feature:1}"
 Mdl="Mdl"
 Schema="Schema"
 Message="Message"
-SCHEMAFILE=schemas/$feature$.js
+SCHEMAFILE=schemas/$feature.js
 MODELFILE=models/$feature.js
 SERVICEFILE=services/$feature.js
 MESSAGEFILE=messages/$feature.js
@@ -18,7 +18,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const $feature$Schema = new Schema({
-  created: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now },
 });
 const $Feature$Mdl = mongoose.model('$Feature', $feature$Schema);
 

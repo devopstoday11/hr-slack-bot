@@ -7,9 +7,8 @@ const userSchema = new Schema({
 	id: { type: String, index: true },
 	real_name: { type: String },
 	image_192: { type: String },
-	created: { type: Date, default: Date.now },
+	createdAt: { type: Date, default: Date.now },
 });
-
 const UserMdl = mongoose.model('User', userSchema);
 
 module.exports = UserMdl;
