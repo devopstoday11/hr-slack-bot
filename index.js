@@ -76,12 +76,12 @@ const userCheckIn = new CronJob({
 				const user = _.find(users, { id: ims.user });
 				if (user) {
 					if (moment().format('HH').toString() === '08') {
-						text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command\n\n*\`I have upgraded to next version\nNow you can talk with me too.I will do my best to answer your queries\`*`;
+						text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
 					} else {
 						text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\n`;
 					}
 					if (reminder === true) {
-						text = `${text}\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} due to ${leaveReasons}\`*\n I will miss you. enjoy holiday:confetti_ball::tada:`;
+						text = `${text}\n:santa: :confetti_ball: :tada:\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} due to ${leaveReasons}\`*\n\n I will miss you. enjoy holiday:confetti_ball::tada:`;
 						reminder = false;
 						leaveDays -= 1;
 					}
@@ -287,6 +287,7 @@ bot.message((message) => {
 				});
 				break;
 			case 'TASK_IN_OUT':
+			// console.log('In Out Message :',message);
 				DB.getTodayTimesheet(message.user)
 					.then((timesheet) => {
 						const task = message.text;
@@ -355,8 +356,11 @@ bot.message((message) => {
 				specificReport(message, 'month', 1, 30);
 				break;
 			case 'HELP':
-				Message.postHelpMessage(message);
-
+				if (_.find(config.admin, (o) => { return o === message.user; })) {
+					Message.postAdminHelpMessage(message);
+				} else {
+					Message.postHelpMessage(message);
+				}
 				break;
 			case 'NOTHING_TO_DO':
 				Message.postErrorMessage(message, new Error('You can only edit task listing messages! :sweat_smile:'));
@@ -469,6 +473,7 @@ bot.message((message) => {
 						leaveDays = (parseInt(setLeaveCommand[1], 10) * 2) + 1;
 						leaveReasons = setLeaveCommand.slice(2, setLeaveCommand.length).join(' ');
 						reminder = true;
+						Message.postMessage(message, 'Leave has been set');
 					} else {
 						Message.postErrorMessage(message, new Error(':confused: \nCan not add holiday after 18:00'));
 					}

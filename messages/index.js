@@ -270,6 +270,87 @@ module.exports = {
 		});
 	},
 
+	postAdminHelpMessage: (message, error) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: message.channel,
+			title: 'HELP DESK',
+			fallback: 'HELP DESK',
+			text: 'Always happy to help\n',
+			as_user: true,
+			attachments: [
+				{
+					fallback: 'IN',
+					color: '#36a64f',
+					pretext: 'Once entered the office',
+					author_name: 'Command',
+					title: 'IN / IN HH:MM',
+					text: 'If you are entering in command and want to keep in time as the current time then enter only IN and if you want to change in time than current time then please provide  time in HH:MM formate after IN'
+				}, {
+					fallback: 'OUT',
+					color: '#0000ff',
+					pretext: 'When Leaving the office',
+					author_name: 'Command',
+					title: 'OUT / OUT HH:MM',
+					text: 'Timing rules are same as IN command'
+				}, {
+					fallback: 'LEAVE',
+					color: '#00ff00',
+					pretext: 'For requesting leave',
+					author_name: 'Command',
+					title: 'LEAVE FROMDATE(DD-MM-YYYY) TODATE(DD-MM-YYYY) REASON',
+					text: 'Ex. leave 6-2-2017 8-2-2017 going to home for family function\n It will be sent to hr and admins for review \n For one day leave keep to and from date same'
+				}, {
+					fallback: 'WEEK',
+					color: '#cc0066',
+					pretext: 'Weekly report of user',
+					author_name: 'Command',
+					title: 'WEEK @username',
+					text: 'Ex. WEEK @ridham .It will print Ridham\'s last week timesheet'
+				}, {
+					fallback: 'MONTH',
+					color: '#808000',
+					pretext: 'Monthly report of user',
+					author_name: 'Command',
+					title: 'MONTH @username',
+					text: 'Ex. MONTH @ridham .It will print Ridham\'s last month timesheet'
+				}, {
+					fallback: 'LEAVEACCEPT requestID your notes',
+					color: '#b33c00',
+					pretext: 'Accept Leave Request',
+					author_name: 'Command',
+					title: 'LEAVEACCEPT leaverequestId Notes',
+					text: 'Ex. LEAVEACCEPT 16060120 your notes'
+				}, {
+					fallback: 'LEAVEREJECT requestID your notes',
+					color: '#00cccc',
+					pretext: 'Reject Leave Request',
+					author_name: 'Command',
+					title: 'LEAVEREJECT leaverequestId Notes',
+					text: 'Ex. LEAVEREJECT 16060120 your notes'
+				}, {
+					fallback: 'LEAVEREPORT @ridham',
+					color: '#669900',
+					pretext: 'Leave Request Report Of User',
+					author_name: 'Command',
+					title: 'LEAVEREPORT @username',
+					text: 'Ex. LEAVEREPORT @ridham'
+				}, {
+					fallback: 'LEAVESET 1 saturday',
+					color: '#ff0000',
+					pretext: 'Set leave to stop reminder on custom holidays',
+					author_name: 'Command',
+					title: 'LEAVESET @username',
+					text: 'Ex. LEAVESET 1 Holi'
+				}
+			]
+		}, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs('Undefined', errSave, new Date());
+			}
+		});
+	},
+
 	postLeaveMessageToAdmin: (channelId, user, leaveReport) => {
 		slack.chat.postMessage({
 			token: config.token,
@@ -363,7 +444,7 @@ module.exports = {
 	},
 
 	postLeaveReport: (message, userId) => {
-		LeaveMdl.find({ id: userId }).sort({ toDate: 1 }).exec((err, leaveDocs) => {
+		LeaveMdl.find({ id: userId }).sort({ fromDate: 1 }).exec((err, leaveDocs) => {
 			if (err) {
 				module.exports.postErrorMessage(message, new Error('Please Try again later'));
 			} else {
@@ -437,7 +518,7 @@ module.exports = {
 							days: t.days,
 							reason: t.reason,
 							code: t.leaveCode,
-							status: t.isApproved ? 'Accepted' : 'Rejected',
+							status: t.isApproved === null ? 'No Action' : (t.isApproved ? 'Approved' : 'Rejected'),//eslint-disable-line
 						};
 						dataset.push(datasetTemp);
 					});
