@@ -67,17 +67,17 @@ bot.started((payload) => {
 });
 
 const userCheckIn = new CronJob({
-	// cronTime: '0 30 8,18 * * 1-6',
-	cronTime: '*/10 * * * * *',
+	cronTime: '0 30 8,18 * * 1-6',
+	// cronTime: '*/10 * * * * *',
 	onTick() {
 		let text = '';
 		let onLeaveUserList = '';
 		if (reminder || leaveDays === 0) {
-			LeaveMdl.getLeaveRequestByDate(new Date())
+			LeaveMdl.getLeaveRequestByDate(moment().startOf('day'))
 			.then((leaves) => {
 				if (leaves.length) {
 					leaves.forEach((leave) => {
-						onLeaveUserList = `${onLeaveUserList}${leave.real_name || leave.name} is on leave from tommorow[${leave.toDate} to ${leave.fromDate} (${leave.days})] for ${leave.reason}\n`;
+						onLeaveUserList = `${onLeaveUserList}\n*\`${leave.real_name || leave.name}\`* is on leave from \`tommorow\`\n*From date: * ${moment(leave.fromDate).format('Do MMM gggg (ddd)')}\n*To Date: * ${moment(leave.toDate).format('Do MMM gggg (ddd)')}\n*Days : * ${leave.days} Days\n*Reason: * ${leave.reason}\n`;
 					});
 				}
 				payloadIms.forEach((ims) => {
@@ -85,6 +85,9 @@ const userCheckIn = new CronJob({
 					if (user) {
 						if (moment().format('HH').toString() === '08') {
 							text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
+							if (_.find(config.admin, (o) => { return o === user.id; })) {
+								text = `${text}\n${onLeaveUserList}`;
+							}
 						} else {
 							text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\n`;
 						}

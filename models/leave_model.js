@@ -52,5 +52,24 @@ module.exports = {
 				resolve(leaveReqest);
 			});
 		});
+	},
+
+	getLeaveRequestByDate: (fromDate) => {
+		const tomorrow = moment(fromDate).add(1, 'days');
+		const dayAfterTommorow = moment(tomorrow).add(1, 'days');
+
+		return new Promise((resolve, reject) => {
+			const query = LeaveMdl.find({
+				fromDate: {
+					$gte: tomorrow.toDate(),
+					$lt: dayAfterTommorow.toDate()
+				},
+				isApproved: true
+			});
+			query.exec((err, timesheet) => {
+				if (err) reject(err);
+				resolve(timesheet);
+			});
+		});
 	}
 };
