@@ -536,6 +536,11 @@ bot.message((message) => {
 							headerStyle: styles.headerDark,
 							width: '20'
 						},
+						actualInTime: {
+							displayName: 'Actual in time',
+							headerStyle: styles.headerDark,
+							width: '20'
+						},
 						tasksPlanned: {
 							displayName: 'Planned tasks',
 							headerStyle: styles.headerDark,
@@ -567,6 +572,7 @@ bot.message((message) => {
 							date: t.createdAt,
 							inTime: t.inTime,
 							outTime: t.outTime,
+							actualInTime: moment.unix(t.taskTs).format('HH:MM'),
 							tasksPlanned: t.tasks,
 							tasksCompleted: t.taskDone
 						};
