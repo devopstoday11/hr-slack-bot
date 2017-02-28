@@ -40,6 +40,7 @@ let payloadIms;
 let leaveDays = 0;
 let reminder = false;
 let leaveReasons;
+let qod = '';
 bot.started((payload) => {
 	const payloadUsers = payload.users;
 	payloadIms = payload.ims;
@@ -72,6 +73,10 @@ const userCheckIn = new CronJob({
 	onTick() {
 		let text = '';
 		let onLeaveUserList = '';
+		request('http://quotes.rest/qod.json', (error, response, body) => {
+			body = JSON.parse(body);
+			qod = `*\`Quote of the day :\`* \n*${body.contents.quotes[0].quote}* - \`${body.contents.quotes[0].author}\``;
+		});
 		if (reminder || leaveDays === 0) {
 			LeaveMdl.getLeaveRequestByDate(moment().startOf('day'))
 			.then((leaves) => {
@@ -319,7 +324,7 @@ bot.message((message) => {
 								DB.saveTaskDone(timesheet, task, message.ts)
 									.then((updatedTime) => {
 										const linkIndex = Math.floor(Math.random() * links.length);
-										Message.postMessage(message, `You have successfully checked out and your completed tasks are posted in \`daily-scrum\`\n Have a good night\n\n Check this out too : ${links[linkIndex]}`);
+										Message.postMessage(message, `You have successfully checked out and your completed tasks are posted in \`daily-scrum\`\n Have a good night\n\n ${qod}`);
 										Message.postChannelOutMessage(message, updatedTime, user, 'msgDoneTs');
 									}).catch((err) => {
 										log.saveLogs(message.user, err, moment());
