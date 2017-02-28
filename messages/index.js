@@ -315,22 +315,29 @@ module.exports = {
 					title: 'MONTH @username',
 					text: 'Ex. MONTH @ridham .It will print Ridham\'s last month timesheet'
 				}, {
-					fallback: 'LEAVEACCEPT requestID your notes',
+					fallback: 'EXCEL',
 					color: '#b33c00',
+					pretext: 'Excel report of user',
+					author_name: 'Command',
+					title: 'EXCEL @username',
+					text: 'Ex. EXCEL @ridham .It will generate excel sheet of Ridham\'s  timesheet'
+				}, {
+					fallback: 'LEAVEACCEPT requestID your notes',
+					color: '#00cccc',
 					pretext: 'Accept Leave Request',
 					author_name: 'Command',
 					title: 'LEAVEACCEPT leaverequestId Notes',
 					text: 'Ex. LEAVEACCEPT 16060120 your notes'
 				}, {
 					fallback: 'LEAVEREJECT requestID your notes',
-					color: '#00cccc',
+					color: '#669900',
 					pretext: 'Reject Leave Request',
 					author_name: 'Command',
 					title: 'LEAVEREJECT leaverequestId Notes',
 					text: 'Ex. LEAVEREJECT 16060120 your notes'
 				}, {
 					fallback: 'LEAVEREPORT @ridham',
-					color: '#669900',
+					color: '#36a64f',
 					pretext: 'Leave Request Report Of User',
 					author_name: 'Command',
 					title: 'LEAVEREPORT @username',

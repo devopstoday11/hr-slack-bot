@@ -1,4 +1,4 @@
-/* eslint-disable no-case-declarations, no-param-reassign */
+	/* eslint-disable no-case-declarations, no-param-reassign */
 const slack = require('slack');
 const fs = require('fs');
 const request = require('request');
@@ -67,36 +67,48 @@ bot.started((payload) => {
 });
 
 const userCheckIn = new CronJob({
-	cronTime: '0 30 8,18 * * 1-6',
-	// cronTime: '*/10 * * * * *',
+	// cronTime: '0 30 8,18 * * 1-6',
+	cronTime: '*/10 * * * * *',
 	onTick() {
 		let text = '';
+		let onLeaveUserList = '';
 		if (reminder || leaveDays === 0) {
-			payloadIms.forEach((ims) => {
-				const user = _.find(users, { id: ims.user });
-				if (user) {
-					if (moment().format('HH').toString() === '08') {
-						text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
-					} else {
-						text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\n`;
-					}
-					if (reminder === true) {
-						text = `${text}\n:santa: :confetti_ball: :tada:\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} due to ${leaveReasons}\`*\n\n I will miss you. enjoy holiday:confetti_ball::tada:`;
-						reminder = false;
-						leaveDays -= 1;
-					}
-					slack.chat.postMessage({
-						token: config.token,
-						channel: ims.id,
-						as_user: true,
-						title: 'Title',
-						text,
-					}, (errSave, data) => {
-						if (errSave) {
-							log.saveLogs('Cron JOB', errSave, moment());
-						}
+			LeaveMdl.getLeaveRequestByDate(new Date())
+			.then((leaves) => {
+				if (leaves.length) {
+					leaves.forEach((leave) => {
+						onLeaveUserList = `${onLeaveUserList}${leave.real_name || leave.name} is on leave from tommorow[${leave.toDate} to ${leave.fromDate} (${leave.days})] for ${leave.reason}\n`;
 					});
 				}
+				payloadIms.forEach((ims) => {
+					const user = _.find(users, { id: ims.user });
+					if (user) {
+						if (moment().format('HH').toString() === '08') {
+							text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
+						} else {
+							text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\n`;
+						}
+						if (reminder === true) {
+							text = `${text}\n:santa: :confetti_ball: :tada:\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} due to ${leaveReasons}\`*\n\n I will miss you. enjoy holiday:confetti_ball::tada:`;
+							reminder = false;
+							leaveDays -= 1;
+						}
+						slack.chat.postMessage({
+							token: config.token,
+							channel: ims.id,
+							as_user: true,
+							title: 'Title',
+							text,
+						}, (errSave, data) => {
+							if (errSave) {
+								log.saveLogs('Cron JOB', errSave, moment());
+							}
+						});
+					}
+				});
+			})
+			.catch((e) => {
+				log.saveLogs('Cron JOB(dailyReminder)', e, moment());
 			});
 		} else {
 			leaveDays -= 1;
