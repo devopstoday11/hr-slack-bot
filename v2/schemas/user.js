@@ -7,6 +7,7 @@ const userSchema = new Schema({
 	id: { type: String, index: true },
 	real_name: { type: String },
 	image_192: { type: String },
+	team: { type: String, index: true },
 	createdAt: { type: Date, default: Date.now },
 });
 
