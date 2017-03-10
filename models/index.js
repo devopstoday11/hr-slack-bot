@@ -69,7 +69,8 @@ module.exports = {
 				userRealname: user.real_name,
 				inTime: time,
 				outTime: null,
-				tasks: null
+				tasks: null,
+				actualInTime: moment().format('HH:mm')
 			};
 			const sheet = new TimeMdl(timeSheet);
 			sheet.save((err, response) => {

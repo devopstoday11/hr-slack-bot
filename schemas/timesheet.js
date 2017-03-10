@@ -10,6 +10,7 @@ const timeSheetSchema = new Schema({
 	inTime: { type: String },
 	outTime: { type: String },
 	tasks: String,
+	actualInTime: { type: String },
 	taskTs: { type: String, default: null },
 	taskDone: { type: String, default: null },
 	taskDoneTs: { type: String, default: null },

@@ -78,7 +78,7 @@ module.exports = {
 		});
 	},
 
-	postChannelInMessage: (message, updatedTime, user, param) => {
+	postChannelInMessage: (message, updatedTime, user, param, color) => {
 		slack.chat.postMessage({
 			token: config.token,
 			channel: config.postChannelId,
@@ -87,11 +87,11 @@ module.exports = {
 			as_user: true,
 			attachments: [
 				{
-					color: '#36a64f',
+					color: `${color || '#36a64f'}`,
 					fallback: `${updatedTime.userRealname} checked in at ${updatedTime.inTime} `,
 					author_name: updatedTime.userRealname,
 					title: 'Today\'s Tasks',
-					text: message.text,
+					text: message.text || 'NO TASK PROVIDED',
 					ts: message.ts,
 					thumb_url: user.image_192,
 				}

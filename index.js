@@ -19,7 +19,7 @@ const Message = require('./messages');
 const log = require('./helper/logger');
 const links = require('./messages/links');
 const DateHelper = require('./helper/date_parser');
-
+const taskReminder = require('./scheduler');
 
 mongoose.connect(config.mongoURL);
 
@@ -260,14 +260,15 @@ bot.message((message) => {
 					}
 					DB.saveTimesheet(user, time)
 					.then((data) => {
-						return true;
+						return data;
 					})
 					.catch((err) => {
 						log.saveLogs(message.user, err, moment());
 						Message.postErrorMessage(message, err);
 					});
 				}
-			}).then(() => {
+			}).then((data) => {
+				taskReminder.setReminder(message, data, new Date().getTime());
 				Message.postMessage(message, 'What are the tasks that you are going to perform today?');
 			}).catch((err) => {
 				log.saveLogs(message.user, err, moment());
@@ -577,7 +578,7 @@ bot.message((message) => {
 							date: t.createdAt,
 							inTime: t.inTime,
 							outTime: t.outTime,
-							actualInTime: moment.unix(t.taskTs).format('HH:MM'),
+							actualInTime: t.actualInTime,
 							tasksPlanned: t.tasks,
 							tasksCompleted: t.taskDone
 						};

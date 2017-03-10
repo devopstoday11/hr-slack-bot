@@ -25,6 +25,7 @@
     "eslint-plugin-react": "^6.8.0",
     "excel-export": "^0.5.1",
     "fs": "0.0.1-security",
+    "kue": "^0.11.5",
     "lodash": "^4.17.2",
     "moment": "^2.17.1",
     "mongoose": "^4.7.4",
