@@ -60,4 +60,4 @@ jobs.process(`deadline-${config.postChannelId}`, 10, (job, done) => {
 	done();
 });
 
-kue.app.listen(3005);
+// kue.app.listen(3005);
