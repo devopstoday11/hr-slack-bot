@@ -5,6 +5,7 @@ const request = require('request');
 const DB = require('./models');
 const log = require('./helper/logger');
 const Message = require('./messages');
+const config = require('./config');
 // create our job queue
 
 const jobs = kue.createQueue({
@@ -13,21 +14,21 @@ const jobs = kue.createQueue({
 module.exports = {
 	setReminder: (message, data, date) => {
 		const currentDateTimeStamp = date;
-		const job = jobs.create('reminder', { message, data })
-			.delay(3600000)
+		const job = jobs.create(`reminder-${config.postChannelId}`, { message, data })
+			.delay(5000)
 			.priority('high')
 			.save();
 	},
 
 	setDeadLine: (message, data) => {
-		const job = jobs.create('deadline', { message, data })
-			.delay(1800000)
+		const job = jobs.create(`deadline-${config.postChannelId}`, { message, data })
+			.delay(5000)
 			.priority('high')
 			.save();
 	}
 };
 
-jobs.process('reminder', 10, (job, done) => {
+jobs.process(`reminder-${config.postChannelId}`, 10, (job, done) => {
 	DB.getTodayTimesheet(job.data.message.user)
 	.then((timesheet) => {
 		if (!timesheet.tasks) {
@@ -41,7 +42,7 @@ jobs.process('reminder', 10, (job, done) => {
 	});
 });
 
-jobs.process('deadline', 10, (job, done) => {
+jobs.process(`deadline-${config.postChannelId}`, 10, (job, done) => {
 	DB.getTodayTimesheet(job.data.message.user)
 	.then((timesheet) => {
 		if (!timesheet.tasks) {
@@ -59,4 +60,4 @@ jobs.process('deadline', 10, (job, done) => {
 	done();
 });
 
-// kue.app.listen(3005);
+kue.app.listen(3005);
