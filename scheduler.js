@@ -47,12 +47,16 @@ jobs.process(`deadline-${config.postChannelId}`, 10, (job, done) => {
 	.then((timesheet) => {
 		if (!timesheet.tasks) {
 			return DB.saveTask(timesheet, 'No Task Provided', job.data.message.ts);
+		} else {
+			return null;
 		}
 	})
 	.then((timesheet) => {
-		job.data.message.text = 'NO TASK PROVIDED (User didn\'t enter tasks even after 1 hour reminder time and half hour buffer time. He/She must be sleeping)';
-		Message.postMessage(job.data.message, 'I have posted your *Check-In* with `no task provided` in `#daily-scrum` channel and `now you can not edit the task`.\n *`#warning`*');
-		Message.postChannelInMessage(job.data.message, timesheet, job.data.message.user, 'msgTs', '#ff0000');
+		if (timesheet) {
+			job.data.message.text = 'NO TASK PROVIDED (User didn\'t enter tasks even after 1 hour reminder time and half hour buffer time. He/She must be sleeping)';
+			Message.postMessage(job.data.message, 'I have posted your *Check-In* with `no task provided` in `#daily-scrum` channel and `now you can not edit the task`.\n *`#warning`*');
+			Message.postChannelInMessage(job.data.message, timesheet, job.data.message.user, 'msgTs', '#ff0000');
+		}
 	})
 	.catch((err) => {
 		log.saveLogs(job.data.message.user, err, moment());
