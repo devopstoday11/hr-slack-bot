@@ -15,14 +15,14 @@ module.exports = {
 	setReminder: (message, data, date) => {
 		const currentDateTimeStamp = date;
 		const job = jobs.create(`reminder-${config.postChannelId}`, { message, data })
-			.delay(5000)
+			.delay(3600000)
 			.priority('high')
 			.save();
 	},
 
 	setDeadLine: (message, data) => {
 		const job = jobs.create(`deadline-${config.postChannelId}`, { message, data })
-			.delay(5000)
+			.delay(1800000)
 			.priority('high')
 			.save();
 	}
