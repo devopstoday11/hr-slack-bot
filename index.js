@@ -13,6 +13,7 @@ const mongoose = require('mongoose');
 const UserMdl = require('./schemas/user');
 const ImsMdl = require('./schemas/ims');
 const TimeMdl = require('./schemas/timesheet');
+const HolidayMdl = require('./schemas/holiday');
 const LeaveMdl = require('./models/leave_model');
 const DB = require('./models');
 const Message = require('./messages');
@@ -40,7 +41,7 @@ let payloadIms;
 let leaveDays = 0;
 let reminder = false;
 let leaveReasons;
-let qod = '';
+const qod = '';
 bot.started((payload) => {
 	const payloadUsers = payload.users;
 	payloadIms = payload.ims;
@@ -68,25 +69,44 @@ bot.started((payload) => {
 });
 
 const userCheckIn = new CronJob({
-	cronTime: '0 30 8,18 * * 1-6',
-	// cronTime: '*/10 * * * * *',
+	// cronTime: '0 30 8,18 * * 1-6',
+	cronTime: '*/30 * * * * *',
 	onTick() {
 		let text = '';
 		let onLeaveUserList = '';
-		request('http://quotes.rest/qod.json', (error, response, body) => {
-			body = JSON.parse(body);
-			qod = `*\`Quote of the day :\`* \n*${body.contents.quotes[0].quote}* - \`${body.contents.quotes[0].author}\``;
-		});
+		let leaveDeclare = '';
+		const todayLeaveuserList = [];
+		// request('http://quotes.rest/qod.json', (error, response, body) => {
+		// 	body = JSON.parse(body);
+		// 	qod = `*\`Quote of the day :\`* \n*${body.contents.quotes[0].quote}* - \`${body.contents.quotes[0].author}\``;
+		// });
 		if (reminder || leaveDays === 0) {
-			LeaveMdl.getLeaveRequestByDate(moment().startOf('day'))
-			.then((leaves) => {
-				if (leaves.length) {
-					leaves.forEach((leave) => {
+			const todayAsDMY = DateHelper.getDateAsDDMMYYYY(new Date());
+			LeaveMdl.isHoliday(todayAsDMY)
+			.then((leave) => {
+				if (leave) {
+					throw new Error('Leave Day');
+				}
+				return Promise.all([LeaveMdl.getLeaveRequestByDate(moment().startOf('day')), LeaveMdl.getLeaveRequestByDateRange(moment().startOf('day'))]);
+			})
+			.then(([tommorowLeaveList, todayLeaveList]) => {
+				if (tommorowLeaveList.length) {
+					tommorowLeaveList.forEach((leave) => {
 						onLeaveUserList = `${onLeaveUserList}\n*\`${leave.real_name || leave.name}\`* is on leave from \`tommorow\`\n*From date: * ${moment(leave.fromDate).format('Do MMM gggg (ddd)')}\n*To Date: * ${moment(leave.toDate).format('Do MMM gggg (ddd)')}\n*Days : * ${leave.days} Days\n*Reason: * ${leave.reason}\n`;
 					});
 				}
+				todayLeaveList.forEach((leave) => {
+					todayLeaveuserList.push(leave.id);
+				});
+				if (reminder === true) {
+					leaveDeclare = `\n:santa: :confetti_ball: :tada:\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} due to ${leaveReasons}\`*\n\n I will miss you. enjoy holiday:confetti_ball::tada:`;
+					reminder = false;
+					leaveDays -= 1;
+				}
 				payloadIms.forEach((ims) => {
-					const user = _.find(users, { id: ims.user });
+					let user = _.find(users, { id: ims.user });
+					const isUserOnLeave = todayLeaveuserList.indexOf(ims.user);
+					user = isUserOnLeave === -1 ? user : null;
 					if (user) {
 						if (moment().format('HH').toString() === '08') {
 							text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
@@ -94,12 +114,7 @@ const userCheckIn = new CronJob({
 								text = `${text}\n${onLeaveUserList}`;
 							}
 						} else {
-							text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n\n`;
-						}
-						if (reminder === true) {
-							text = `${text}\n:santa: :confetti_ball: :tada:\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} due to ${leaveReasons}\`*\n\n I will miss you. enjoy holiday:confetti_ball::tada:`;
-							reminder = false;
-							leaveDays -= 1;
+							text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n${leaveDeclare}`;
 						}
 						slack.chat.postMessage({
 							token: config.token,
@@ -490,7 +505,25 @@ bot.message((message) => {
 			case 'LEAVESET':
 				const setLeaveCommand = message.text.split(' ');
 				if (setLeaveCommand.length >= 3) {
-					if (parseInt(moment().format('HH'), 10) < 18) {
+					if (isNaN(setLeaveCommand[1])) {
+						if (!DateHelper.isValidDate(setLeaveCommand[1])) {
+							Message.postErrorMessage(message, new Error('Invalid Date'));
+						} else {
+							const holiday = new HolidayMdl({
+								leaveDate: DateHelper.getDateAsDDMMYYYY(DateHelper.parseDate(setLeaveCommand[1])),
+								reason: setLeaveCommand.slice(2, setLeaveCommand.length).join(' '),
+								addedBy: user.real_name
+							});
+							holiday.save((err, response) => {
+								if (err) {
+									log.saveLogs(response.username, err, moment());
+									Message.postErrorMessage(message, new Error('\nThere is some problem serving you request. Please try again till then I will repair myself.'));
+								} else {
+									Message.postMessage(message, `Leave has been set on *${response.leaveDate}* for *${response.reason}*`);
+								}
+							});
+						}
+					} else if (parseInt(moment().format('HH'), 10) < 18) {
 						leaveDays = (parseInt(setLeaveCommand[1], 10) * 2) + 1;
 						leaveReasons = setLeaveCommand.slice(2, setLeaveCommand.length).join(' ');
 						reminder = true;

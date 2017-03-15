@@ -345,9 +345,9 @@ module.exports = {
 				}, {
 					fallback: 'LEAVESET 1 saturday',
 					color: '#ff0000',
-					pretext: 'Set leave to stop reminder on custom holidays',
+					pretext: 'Set leave to stop reminder on custom holidays(if number is given then for next that days ignoring sunday will be set as leave & if date is given then for that date leave is set)',
 					author_name: 'Command',
-					title: 'LEAVESET @username',
+					title: 'LEAVESET number_of_days reason',
 					text: 'Ex. LEAVESET 1 Holi'
 				}
 			]

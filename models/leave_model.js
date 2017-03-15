@@ -1,6 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 const moment = require('moment');
 const LeaveMdl = require('../schemas/leave');
+const HolidayMdl = require('../schemas/holiday');
 // const ChannelMsgMdl = require('../schemas/channelMessage');
 const mongoose = require('mongoose');
 const log = require('../helper/logger');
@@ -71,5 +72,36 @@ module.exports = {
 				resolve(timesheet);
 			});
 		});
-	}
+	},
+
+	getLeaveRequestByDateRange: (fromDate) => {
+		const dateToSearch = fromDate.toDate();
+		return new Promise((resolve, reject) => {
+			const query = LeaveMdl.find({
+				fromDate: {
+					$gte: dateToSearch,
+				},
+				toDate: {
+					$lte: dateToSearch,
+				},
+				isApproved: true
+			});
+			query.exec((err, timesheet) => {
+				if (err) reject(err);
+				resolve(timesheet);
+			});
+		});
+	},
+
+	isHoliday: (date) => {
+		return new Promise((resolve, reject) => {
+			const query = HolidayMdl.find({
+				leaveDate: date
+			});
+			query.exec((err, timesheet) => {
+				if (err) reject(err);
+				resolve(timesheet.length ? timesheet[0] : false);
+			});
+		});
+	},
 };
