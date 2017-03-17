@@ -41,7 +41,7 @@ let payloadIms;
 let leaveDays = 0;
 let reminder = false;
 let leaveReasons;
-const qod = '';
+let qod = '';
 bot.started((payload) => {
 	const payloadUsers = payload.users;
 	payloadIms = payload.ims;
@@ -76,10 +76,10 @@ const userCheckIn = new CronJob({
 		let onLeaveUserList = '';
 		let leaveDeclare = '';
 		const todayLeaveuserList = [];
-		// request('http://quotes.rest/qod.json', (error, response, body) => {
-		// 	body = JSON.parse(body);
-		// 	qod = `*\`Quote of the day :\`* \n*${body.contents.quotes[0].quote}* - \`${body.contents.quotes[0].author}\``;
-		// });
+		request('http://quotes.rest/qod.json', (error, response, body) => {
+			body = JSON.parse(body);
+			qod = `*\`Quote of the day :\`* \n*${body.contents.quotes[0].quote}* - \`${body.contents.quotes[0].author}\``;
+		});
 		if (reminder || leaveDays === 0) {
 			const todayAsDMY = DateHelper.getDateAsDDMMYYYY(new Date());
 			const tommorrowAsDMY = DateHelper.getDateAsDDMMYYYY(moment().add(1, 'days').toDate());
@@ -458,10 +458,10 @@ bot.message((message) => {
 				.then((leaveDataDoc) => {
 					leaveDoc = leaveDataDoc;
 					if (leaveDoc.isApproved) {
-						Message.postErrorMessage(message, new Error('\nYou have alreay accepted this request'));
+						Message.postErrorMessage(message, new Error(`\n${leaveDoc.actionBy || 'Someone'} have alreay accepted this request`));
 						return false;
 					} else {
-						return LeaveMdl.updateLeaveRequest(leaveDoc._id, true, note);
+						return LeaveMdl.updateLeaveRequest(leaveDoc._id, true, note, user.real_name);
 					}
 				})
 				.then((leaveDataDoc) => {
@@ -486,10 +486,10 @@ bot.message((message) => {
 				.then((leaveDataDoc) => {
 					leaveDocument = leaveDataDoc;
 					if (leaveDocument.isApproved === false) {
-						Message.postErrorMessage(message, new Error('\nYou have alreay rejected this request'));
+						Message.postErrorMessage(message, new Error(`\n${leaveDocument.actionBy || 'Someone'} have alreay rejected this request`));
 						return false;
 					} else {
-						return LeaveMdl.updateLeaveRequest(leaveDocument._id, false, rejectNote);
+						return LeaveMdl.updateLeaveRequest(leaveDocument._id, false, rejectNote, user.real_name);
 					}
 				})
 				.then((leaveDataDoc) => {

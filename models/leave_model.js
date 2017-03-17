@@ -46,9 +46,9 @@ module.exports = {
 		});
 	},
 
-	updateLeaveRequest: (docId, isApproved, note) => {
+	updateLeaveRequest: (docId, isApproved, note, actionBy) => {
 		return new Promise((resolve, reject) => {
-			LeaveMdl.update({ _id: docId }, { isApproved, note }, (err, leaveReqest) => {
+			LeaveMdl.update({ _id: docId }, { isApproved, note, actionBy }, (err, leaveReqest) => {
 				if (err) reject(err);
 				resolve(leaveReqest);
 			});

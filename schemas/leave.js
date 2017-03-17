@@ -13,6 +13,7 @@ const leaveSchema = new Schema({
 	isApproved: { type: Boolean, default: null },
 	leaveCode: { type: Number, index: true },
 	note: { type: String },
+	actionBy: { type: String }
 });
 
 const LeaveMdl = mongoose.model('Leave', leaveSchema);
