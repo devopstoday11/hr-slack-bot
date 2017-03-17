@@ -70,7 +70,7 @@ bot.started((payload) => {
 
 const userCheckIn = new CronJob({
 	cronTime: '0 30 8,18 * * 1-6',
-	// cronTime: '*/30 * * * * *',
+	// cronTime: '*/20 * * * * *',
 	onTick() {
 		let text = '';
 		let onLeaveUserList = '';
@@ -82,14 +82,15 @@ const userCheckIn = new CronJob({
 		// });
 		if (reminder || leaveDays === 0) {
 			const todayAsDMY = DateHelper.getDateAsDDMMYYYY(new Date());
+			const tommorrowAsDMY = DateHelper.getDateAsDDMMYYYY(moment().add(1, 'days').toDate());
 			LeaveMdl.isHoliday(todayAsDMY)
 			.then((leave) => {
 				if (leave) {
 					throw new Error('Leave Day');
 				}
-				return Promise.all([LeaveMdl.getLeaveRequestByDate(moment().startOf('day')), LeaveMdl.getLeaveRequestByDateRange(moment().startOf('day'))]);
+				return Promise.all([LeaveMdl.getLeaveRequestByDate(moment().startOf('day')), LeaveMdl.getLeaveRequestByDateRange(moment().startOf('day')), LeaveMdl.isHoliday(tommorrowAsDMY)]);
 			})
-			.then(([tommorowLeaveList, todayLeaveList]) => {
+			.then(([tommorowLeaveList, todayLeaveList, tommorowHoliday]) => {
 				if (tommorowLeaveList.length) {
 					tommorowLeaveList.forEach((leave) => {
 						onLeaveUserList = `${onLeaveUserList}\n*\`${leave.real_name || leave.name}\`* is on leave from \`tommorow\`\n*From date: * ${moment(leave.fromDate).format('Do MMM gggg (ddd)')}\n*To Date: * ${moment(leave.toDate).format('Do MMM gggg (ddd)')}\n*Days : * ${leave.days} Days\n*Reason: * ${leave.reason}\n`;
@@ -99,9 +100,12 @@ const userCheckIn = new CronJob({
 					todayLeaveuserList.push(leave.id);
 				});
 				if (reminder === true) {
-					leaveDeclare = `\n:santa: :confetti_ball: :tada:\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} due to ${leaveReasons}\`*\n\n I will miss you. enjoy holiday:confetti_ball::tada:`;
+					leaveDeclare = `\n:santa: :confetti_ball: :tada:\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} day(s) due to ${leaveReasons}\`*\n\n I will miss you. enjoy holiday:confetti_ball::tada:`;
 					reminder = false;
 					leaveDays -= 1;
+				}
+				if (tommorowHoliday) {
+					leaveDeclare = `\n:santa: :confetti_ball: :tada:\n\n*\`Hey We have holiday for next ${tommorowHoliday.leaveDays} day(s) due to ${tommorowHoliday.reason}\`*\n\n I will miss you. enjoy holiday:confetti_ball::tada:`;
 				}
 				payloadIms.forEach((ims) => {
 					let user = _.find(users, { id: ims.user });
@@ -110,9 +114,9 @@ const userCheckIn = new CronJob({
 					if (user) {
 						if (moment().format('HH').toString() === '08') {
 							text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
-							if (_.find(config.admin, (o) => { return o === user.id; })) {
-								text = `${text}\n${onLeaveUserList}`;
-							}
+							// if (_.find(config.admin, (o) => { return o === user.id; })) {
+							text = `${text}\n${onLeaveUserList}`;
+							// }
 						} else {
 							text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n${leaveDeclare}`;
 						}
@@ -235,6 +239,8 @@ bot.message((message) => {
 					} else {
 						testCase = 'WRONG';
 					}
+				} else if (message.text.toLowerCase() === 'holiday') {
+					testCase = 'HOLIDAY';
 				} else {
 					testCase = 'TASK_IN_OUT';
 				}
@@ -504,15 +510,18 @@ bot.message((message) => {
 				break;
 			case 'LEAVESET':
 				const setLeaveCommand = message.text.split(' ');
-				if (setLeaveCommand.length >= 3) {
-					if (isNaN(setLeaveCommand[1])) {
+				if (setLeaveCommand.length >= 4) {
+					if (isNaN(setLeaveCommand[1]) || isNaN(setLeaveCommand[2])) {
 						if (!DateHelper.isValidDate(setLeaveCommand[1])) {
-							Message.postErrorMessage(message, new Error('Invalid Date'));
+							Message.postErrorMessage(message, new Error('Invalid Date or leave days'));
 						} else {
+							const parseDate = DateHelper.parseDate(setLeaveCommand[1]);
 							const holiday = new HolidayMdl({
-								leaveDate: DateHelper.getDateAsDDMMYYYY(DateHelper.parseDate(setLeaveCommand[1])),
-								reason: setLeaveCommand.slice(2, setLeaveCommand.length).join(' '),
-								addedBy: user.real_name
+								leaveDate: DateHelper.getDateAsDDMMYYYY(parseDate),
+								reason: setLeaveCommand.slice(3, setLeaveCommand.length).join(' '),
+								addedBy: user.real_name,
+								leaveDays: setLeaveCommand[2],
+								isoDate: parseDate
 							});
 							holiday.save((err, response) => {
 								if (err) {
@@ -535,6 +544,19 @@ bot.message((message) => {
 					Message.postErrorMessage(message, new Error(':confused: \nInvalid Command'));
 				}
 
+				break;
+			case 'HOLIDAY':
+				LeaveMdl.getHolidays(new Date())
+				.then((holidays) => {
+					if (holidays) {
+						Message.postHolidays(message, holidays);
+					} else {
+						Message.postErrorMessage(message, new Error('No further holiday data available'));
+					}
+				})
+				.catch((err) => {
+					Message.postErrorMessage(message, new Error('\nThere is some problem serving you request. Please try again till then I will repair myself.'));
+				});
 				break;
 			case 'EXCEL':
 				try {
@@ -672,8 +694,8 @@ function specificReport(message, timePeriod, start, end) {
 			DB.getSpecificTimesheet(userId, start, end)
 			.then((timesheet) => {
 				let i = 0;
+				const colorCode = ['#0000FF', '#36a64f', '#cc0066', '#808000', '#b33c00', '#00cccc', '#669900'];
 				timesheet.forEach((t, index) => {
-					const colorCode = ['#0000FF', '#36a64f', '#cc0066', '#808000', '#b33c00', '#00cccc', '#669900'];
 					attach = {
 						color: colorCode[i % 6],
 						title: `${moment(t.createdAt).format('DD-MM-YYYY')}`,

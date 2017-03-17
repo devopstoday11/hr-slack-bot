@@ -1,6 +1,7 @@
 const slack = require('slack');
 const excel = require('node-excel-export');
 const fs = require('fs');
+const moment = require('moment');
 const request = require('request');
 const DB = require('../models');
 const LeaveMdl = require('../schemas/leave');
@@ -68,8 +69,8 @@ module.exports = {
 			as_user: true,
 			attachments: [{
 				color: '#ff0000',
-				fallback: `${error.message}`,
-				text: `${error.message}`,
+				fallback: `${(error || {}).message}`,
+				text: `${(error || {}).message}`,
 			}]
 		}, (errSave, data) => {
 			if (errSave) {
@@ -261,7 +262,15 @@ module.exports = {
 					author_name: 'Command',
 					title: 'LEAVE FROMDATE(DD-MM-YYYY) TODATE(DD-MM-YYYY) REASON',
 					text: 'Ex. leave 6-2-2017 8-2-2017 going to home for family function\n It will be sent to hr and admins for review \n For one day leave keep to and from date same'
-				}
+				},
+				{
+					fallback: 'HOLIDAY',
+					color: '#ff0000',
+					pretext: 'For Holiday List',
+					author_name: 'Command',
+					title: 'HOLIDAY',
+					text: 'holiday'
+				},
 			]
 		}, (errSave, data) => {
 			if (errSave) {
@@ -343,12 +352,12 @@ module.exports = {
 					title: 'LEAVEREPORT @username',
 					text: 'Ex. LEAVEREPORT @ridham'
 				}, {
-					fallback: 'LEAVESET 1 saturday',
+					fallback: 'LEAVESET dd-mm-yyyy Number of continous day Reason',
 					color: '#ff0000',
 					pretext: 'Set leave to stop reminder on custom holidays(if number is given then for next that days ignoring sunday will be set as leave & if date is given then for that date leave is set)',
 					author_name: 'Command',
-					title: 'LEAVESET number_of_days reason',
-					text: 'Ex. LEAVESET 1 Holi'
+					title: 'LEAVESET dd-mm-yyyy Number of continous day Reason',
+					text: 'Ex. LEAVESET 12-03-2017 2 Holi-Dhuleti'
 				}
 			]
 		}, (errSave, data) => {
@@ -557,8 +566,36 @@ module.exports = {
 					});
 				} catch (tryError) {
 					log.saveLogs(message.user, tryError, new Date());
-					module.exports.postErrorMessage(message, err);
+					module.exports.postErrorMessage(message, tryError);
 				}
+			}
+		});
+	},
+
+	postHolidays: (message, holidays) => {
+		let i = 0;
+		const colorCode = ['#0000FF', '#36a64f', '#cc0066', '#808000', '#b33c00', '#00cccc', '#669900'];
+		const attachment = [];
+		holidays.forEach((h, index) => {
+			const attach = {
+				color: colorCode[i % 6],
+				title: `${h.leaveDate}`,
+				text: `Reason : ${h.reason}`,
+			};
+			attachment.push(attach);
+			i += 1;
+		});
+		slack.chat.postMessage({
+			token: config.token,
+			channel: message.channel,
+			title: 'Title',
+			as_user: true,
+			fallback: 'Holiday List',
+			text: 'Holiday List',
+			attachments: attachment,
+		}, (err, data) => {
+			if (err) {
+				log.saveLogs(message.user, err, new Date());
 			}
 		});
 	}

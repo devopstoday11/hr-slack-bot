@@ -98,10 +98,22 @@ module.exports = {
 			const query = HolidayMdl.find({
 				leaveDate: date
 			});
-			query.exec((err, timesheet) => {
+			query.exec((err, holiday) => {
 				if (err) reject(err);
-				resolve(timesheet.length ? timesheet[0] : false);
+				resolve(holiday.length ? holiday[0] : false);
 			});
 		});
 	},
+
+	getHolidays: (date) => {
+		return new Promise((resolve, reject) => {
+			const query = HolidayMdl.find({
+				isoDate: { $gte: date },
+			});
+			query.sort('isoDate').exec((err, holiday) => {
+				if (err) reject(err);
+				resolve(holiday.length ? holiday : false);
+			});
+		});
+	}
 };
