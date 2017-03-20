@@ -606,7 +606,7 @@ module.exports = {
 		holidays.forEach((h, index) => {
 			const attach = {
 				color: colorCode[i % 6],
-				title: `${h.leaveDate} (h.day || '')`,
+				title: `${h.leaveDate} (${h.day || ''})`,
 				text: `Reason : ${h.reason}`,
 			};
 			attachment.push(attach);
