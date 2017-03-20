@@ -529,7 +529,7 @@ bot.message((message) => {
 							});
 							holiday.save((err, response) => {
 								if (err) {
-									log.saveLogs(response.username, err, moment());
+									log.saveLogs(user.real_name, err, moment());
 									Message.postErrorMessage(message, new Error('\nThere is some problem serving you request. Please try again till then I will repair myself.'));
 								} else {
 									Message.postMessage(message, `Leave has been set on *${response.leaveDate}* for *${response.reason}*`);
