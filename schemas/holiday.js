@@ -8,6 +8,7 @@ const holidaySchema = new Schema({
 	addedBy: String,
 	leaveDays: Number,
 	isoDate: Date,
+	day: String
 });
 
 const HolidayMdl = mongoose.model('Holiday', holidaySchema);

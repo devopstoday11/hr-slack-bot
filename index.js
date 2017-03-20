@@ -522,7 +522,8 @@ bot.message((message) => {
 							reason: setLeaveCommand.slice(3, setLeaveCommand.length).join(' '),
 							addedBy: user.real_name,
 							leaveDays: setLeaveCommand[2],
-							isoDate: parseDate
+							isoDate: parseDate,
+							day: moment(parseDate).format('dddd')
 						});
 						holiday.save((err, response) => {
 							if (err) {

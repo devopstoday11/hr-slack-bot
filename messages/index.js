@@ -606,7 +606,7 @@ module.exports = {
 		holidays.forEach((h, index) => {
 			const attach = {
 				color: colorCode[i % 6],
-				title: `${h.leaveDate}`,
+				title: `${h.leaveDate} (h.day || '')`,
 				text: `Reason : ${h.reason}`,
 			};
 			attachment.push(attach);
@@ -656,6 +656,11 @@ module.exports = {
 					headerStyle: styles.headerDark,
 					width: '20'
 				},
+				day: {
+					displayName: 'Date',
+					headerStyle: styles.headerDark,
+					width: '20'
+				},
 				reason: {
 					displayName: 'Reason',
 					headerStyle: styles.headerDark,
@@ -670,6 +675,7 @@ module.exports = {
 			holidays.forEach((t, index) => {
 				datasetTemp = {
 					date: t.leaveDate,
+					day: t.day,
 					reason: t.reason,
 				};
 				dataset.push(datasetTemp);
