@@ -567,7 +567,7 @@ module.exports = {
 							url: 'https://slack.com/api/files.upload',
 							formData: {
 								token: config.token,
-								title: 'User Report',
+								title: `Leave Report of ${leaveDocs[0].name}`,
 								filename: `${leaveDocs[0].name}.xlsx`,
 								filetype: 'auto',
 								channels: message.channel,
@@ -611,5 +611,82 @@ module.exports = {
 				log.saveLogs(message.user, err, new Date());
 			}
 		});
-	}
+	},
+
+	postHolidayList: (message, holidays) => {
+		try {
+			const styles = {
+				headerDark: {
+					fill: {
+						fgColor: {
+							rgb: 'C0C0C0'
+						},
+						sz: 15,
+						height: 20
+					},
+					font: {
+						color: {
+							rgb: '000000'
+						},
+						sz: 14,
+						bold: true,
+						underline: true
+					}
+				}
+			};
+		// Array of objects representing heading rows (very top)
+		// Here you specify the export structure
+			const specification = {
+				date: {
+					displayName: 'Date',
+					headerStyle: styles.headerDark,
+					width: '20'
+				},
+				reason: {
+					displayName: 'Reason',
+					headerStyle: styles.headerDark,
+					width: '20'
+				}
+			};
+			const dataset = [];
+			let datasetTemp = [];
+			if (typeof holidays[0] === 'undefined') {
+				throw new Error('No data to fetch!');
+			}
+			holidays.forEach((t, index) => {
+				datasetTemp = {
+					date: t.leaveDate,
+					reason: t.reason,
+				};
+				dataset.push(datasetTemp);
+			});
+			const report = excel.buildExport(
+				[
+					{
+						specification,
+						data: dataset
+					}
+				]
+			);
+			fs.writeFile(`${__dirname}/../sheets/HOLIDAYLIST.xlsx`, report, (res2, error) => {
+				if (error) log.saveLogs(message.user, error, new Date());
+				request.post({
+					url: 'https://slack.com/api/files.upload',
+					formData: {
+						token: config.token,
+						title: 'Holiday List',
+						filename: 'HOLIDAYLIST.xlsx',
+						filetype: 'auto',
+						channels: message.channel,
+						file: fs.createReadStream(`${__dirname}/../sheets/HOLIDAYLIST.xlsx`),
+					},
+				}, (messageError, response) => {
+					if (messageError) log.saveLogs(message.user, messageError, new Date());
+				});
+			});
+		} catch (tryError) {
+			log.saveLogs(message.user, tryError, new Date());
+			module.exports.postErrorMessage(message, tryError);
+		}
+	},
 };

@@ -115,5 +115,20 @@ module.exports = {
 				resolve(holiday.length ? holiday : false);
 			});
 		});
+	},
+
+	getHolidayList: (date) => {
+		return new Promise((resolve, reject) => {
+			const query = HolidayMdl.find({
+				isoDate: {
+					$lt: new Date(new Date().getFullYear() + 1, 0, 1),
+					$gt: new Date(new Date().getFullYear(), 0, 1)
+				},
+			});
+			query.sort('isoDate').exec((err, holidays) => {
+				if (err) reject(err);
+				resolve(holidays.length ? holidays : false);
+			});
+		});
 	}
 };

@@ -239,8 +239,12 @@ bot.message((message) => {
 					} else {
 						testCase = 'WRONG';
 					}
-				} else if (message.text.toLowerCase() === 'holiday') {
-					testCase = 'HOLIDAY';
+				} else if ((message.text.toLowerCase() === 'holiday' || message.text.toLowerCase().indexOf('holiday') === 0)) {
+					if (message.text.toLowerCase().trim() === 'holiday') {
+						testCase = 'HOLIDAY';
+					} else if (message.text.toLowerCase().trim() === 'holidaylist') {
+						testCase = 'HOLIDAYLIST';
+					}
 				} else {
 					testCase = 'TASK_IN_OUT';
 				}
@@ -558,6 +562,19 @@ bot.message((message) => {
 					Message.postErrorMessage(message, new Error('\nThere is some problem serving you request. Please try again till then I will repair myself.'));
 				});
 				break;
+			case 'HOLIDAYLIST':
+				LeaveMdl.getHolidayList(new Date())
+					.then((holidays) => {
+						if (holidays) {
+							Message.postHolidayList(message, holidays);
+						} else {
+							Message.postErrorMessage(message, new Error('No data available'));
+						}
+					})
+					.catch((err) => {
+						Message.postErrorMessage(message, new Error('\nThere is some problem serving you request. Please try again till then I will repair myself.'));
+					});
+				break;
 			case 'EXCEL':
 				try {
 					const styles = {
@@ -656,7 +673,7 @@ bot.message((message) => {
 							url: 'https://slack.com/api/files.upload',
 							formData: {
 								token: config.token,
-								title: 'User Report',
+								title: `Timesheet of ${timesheet[0].username}`,
 								filename: `${timesheet[0].username}.xlsx`,
 								filetype: 'auto',
 								channels: message.channel,
