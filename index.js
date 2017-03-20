@@ -240,10 +240,14 @@ bot.message((message) => {
 						testCase = 'WRONG';
 					}
 				} else if ((message.text.toLowerCase() === 'holiday' || message.text.toLowerCase().indexOf('holiday') === 0)) {
-					if (message.text.toLowerCase().trim() === 'holiday') {
-						testCase = 'HOLIDAY';
-					} else if (message.text.toLowerCase().trim() === 'holidaylist') {
-						testCase = 'HOLIDAYLIST';
+					if (_.find(config.admin, (o) => { return o === message.user; })) {
+						if (message.text.toLowerCase().trim() === 'holiday') {
+							testCase = 'HOLIDAY';
+						} else if (message.text.toLowerCase().trim() === 'holidaylist') {
+							testCase = 'HOLIDAYLIST';
+						}
+					} else {
+						testCase = 'UNAUTHORIZED';
 					}
 				} else {
 					testCase = 'TASK_IN_OUT';
@@ -515,34 +519,34 @@ bot.message((message) => {
 			case 'LEAVESET':
 				const setLeaveCommand = message.text.split(' ');
 				if (setLeaveCommand.length >= 4) {
-					if (isNaN(setLeaveCommand[1]) || isNaN(setLeaveCommand[2])) {
-						if (!DateHelper.isValidDate(setLeaveCommand[1])) {
-							Message.postErrorMessage(message, new Error('Invalid Date or leave days'));
-						} else {
-							const parseDate = DateHelper.parseDate(setLeaveCommand[1]);
-							const holiday = new HolidayMdl({
-								leaveDate: DateHelper.getDateAsDDMMYYYY(parseDate),
-								reason: setLeaveCommand.slice(3, setLeaveCommand.length).join(' '),
-								addedBy: user.real_name,
-								leaveDays: setLeaveCommand[2],
-								isoDate: parseDate
-							});
-							holiday.save((err, response) => {
-								if (err) {
-									log.saveLogs(user.real_name, err, moment());
-									Message.postErrorMessage(message, new Error('\nThere is some problem serving you request. Please try again till then I will repair myself.'));
-								} else {
-									Message.postMessage(message, `Leave has been set on *${response.leaveDate}* for *${response.reason}*`);
-								}
-							});
-						}
-					} else if (parseInt(moment().format('HH'), 10) < 18) {
-						leaveDays = (parseInt(setLeaveCommand[1], 10) * 2) + 1;
-						leaveReasons = setLeaveCommand.slice(2, setLeaveCommand.length).join(' ');
-						reminder = true;
-						Message.postMessage(message, 'Leave has been set');
+					if (!isNaN(setLeaveCommand[2]) && DateHelper.isValidDate(setLeaveCommand[1])) {
+						const parseDate = DateHelper.parseDate(setLeaveCommand[1]);
+						const holiday = new HolidayMdl({
+							leaveDate: DateHelper.getDateAsDDMMYYYY(parseDate),
+							reason: setLeaveCommand.slice(3, setLeaveCommand.length).join(' '),
+							addedBy: user.real_name,
+							leaveDays: setLeaveCommand[2],
+							isoDate: parseDate
+						});
+						holiday.save((err, response) => {
+							if (err) {
+								log.saveLogs(user.real_name, err, moment());
+								Message.postErrorMessage(message, new Error('\nThere is some problem serving you request. Please try again till then I will repair myself.'));
+							} else {
+								Message.postMessage(message, `Leave has been set on *${response.leaveDate}* for *${response.reason}*`);
+							}
+						});
+					// else if (parseInt(moment().format('HH'), 10) < 18) {
+					// 	if (!isNaN(setLeaveCommand[1])) {
+					// 		leaveDays = (parseInt(setLeaveCommand[1], 10) * 2) + 1;
+					// 		leaveReasons = setLeaveCommand.slice(2, setLeaveCommand.length).join(' ');
+					// 		reminder = true;
+					// 		Message.postMessage(message, 'Leave has been set');
+					// 	} else {
+					// 		Message.postErrorMessage(message, new Error('Invalid Date or leave days'));
+					// 	}
 					} else {
-						Message.postErrorMessage(message, new Error(':confused: \nCan not add holiday after 18:00'));
+						Message.postErrorMessage(message, new Error('Invalid Date or leave days'));
 					}
 				} else {
 					Message.postErrorMessage(message, new Error(':confused: \nInvalid Command'));

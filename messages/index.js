@@ -373,11 +373,11 @@ module.exports = {
 					title: 'LEAVEREPORT @username',
 					text: 'Ex. LEAVEREPORT @ridham'
 				}, {
-					fallback: 'LEAVESET dd-mm-yyyy Number of continous day Reason',
+					fallback: 'LEAVESET dd-mm-yyyy  Reason',
 					color: '#ff0000',
 					pretext: 'Set leave to stop reminder on custom holidays(if number is given then for next that days ignoring sunday will be set as leave & if date is given then for that date leave is set)',
 					author_name: 'Command',
-					title: 'LEAVESET dd-mm-yyyy Number of continous day Reason',
+					title: 'LEAVESET dd-mm-yyyy Number_of_continous_day Reason',
 					text: 'Ex. LEAVESET 12-03-2017 2 Holi-Dhuleti'
 				}
 			]

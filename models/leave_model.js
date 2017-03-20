@@ -122,7 +122,7 @@ module.exports = {
 			const query = HolidayMdl.find({
 				isoDate: {
 					$lt: new Date(new Date().getFullYear() + 1, 0, 1),
-					$gt: new Date(new Date().getFullYear(), 0, 1)
+					$gte: new Date(new Date().getFullYear(), 0, 1)
 				},
 			});
 			query.sort('isoDate').exec((err, holidays) => {
