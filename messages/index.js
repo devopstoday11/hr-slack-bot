@@ -310,6 +310,13 @@ module.exports = {
 					title: 'LEAVE FROMDATE(DD-MM-YYYY) TODATE(DD-MM-YYYY) REASON',
 					text: 'Ex. leave 6-2-2017 8-2-2017 going to home for family function\n It will be sent to hr and admins for review \n For one day leave keep to and from date same'
 				}, {
+					fallback: 'HOLIDAY',
+					color: '#ff0000',
+					pretext: 'For Holiday List',
+					author_name: 'Command',
+					title: 'HOLIDAY',
+					text: 'holiday'
+				}, {
 					fallback: 'WEEK',
 					color: '#cc0066',
 					pretext: 'Weekly report of user',
@@ -516,6 +523,11 @@ module.exports = {
 							displayName: 'Status',
 							headerStyle: styles.headerDark,
 							width: '20'
+						},
+						action: {
+							displayName: 'Action By',
+							headerStyle: styles.headerDark,
+							width: '20'
 						}
 					};
 					const dataset = [];
@@ -535,6 +547,7 @@ module.exports = {
 							reason: t.reason,
 							code: t.leaveCode,
 							status: t.isApproved === null ? 'No Action' : (t.isApproved ? 'Approved' : 'Rejected'),//eslint-disable-line
+							action: t.actionBy || '',
 						};
 						dataset.push(datasetTemp);
 					});
