@@ -269,8 +269,15 @@ module.exports = {
 					pretext: 'For Holiday List',
 					author_name: 'Command',
 					title: 'HOLIDAY',
-					text: 'holiday'
-				},
+					text: 'Get the list of holidays as message'
+				}, {
+					fallback: 'HOLIDAY SHEET',
+					color: '#ffff00',
+					pretext: 'For Holiday List in excel sheet',
+					author_name: 'Command',
+					title: 'HOLIDAYLIST',
+					text: 'Get the list of holidays as excel sheet'
+				}
 			]
 		}, (errSave, data) => {
 			if (errSave) {
@@ -315,7 +322,14 @@ module.exports = {
 					pretext: 'For Holiday List',
 					author_name: 'Command',
 					title: 'HOLIDAY',
-					text: 'holiday'
+					text: 'Get the list of holidays as message'
+				}, {
+					fallback: 'HOLIDAY SHEET',
+					color: '#ffff00',
+					pretext: 'For Holiday List in excel sheet',
+					author_name: 'Command',
+					title: 'HOLIDAYLIST',
+					text: 'Get the list of holidays as excel sheet'
 				}, {
 					fallback: 'WEEK',
 					color: '#cc0066',
