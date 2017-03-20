@@ -240,14 +240,10 @@ bot.message((message) => {
 						testCase = 'WRONG';
 					}
 				} else if ((message.text.toLowerCase() === 'holiday' || message.text.toLowerCase().indexOf('holiday') === 0)) {
-					if (_.find(config.admin, (o) => { return o === message.user; })) {
-						if (message.text.toLowerCase().trim() === 'holiday') {
-							testCase = 'HOLIDAY';
-						} else if (message.text.toLowerCase().trim() === 'holidaylist') {
-							testCase = 'HOLIDAYLIST';
-						}
-					} else {
-						testCase = 'UNAUTHORIZED';
+					if (message.text.toLowerCase().trim() === 'holiday') {
+						testCase = 'HOLIDAY';
+					} else if (message.text.toLowerCase().trim() === 'holidaylist') {
+						testCase = 'HOLIDAYLIST';
 					}
 				} else {
 					testCase = 'TASK_IN_OUT';
