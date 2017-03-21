@@ -74,11 +74,16 @@ const userCheckIn = new CronJob({
 	onTick() {
 		let text = '';
 		let onLeaveUserList = '';
+		let onTodayLeaveList = '';
 		let leaveDeclare = '';
 		const todayLeaveuserList = [];
 		request('http://quotes.rest/qod.json', (error, response, body) => {
-			body = JSON.parse(body);
-			qod = `*\`Quote of the day :\`* \n*${body.contents.quotes[0].quote}* - \`${body.contents.quotes[0].author}\``;
+			try {
+				body = JSON.parse(body);
+				qod = `*\`Quote of the day :\`* \n*${body.contents.quotes[0].quote}* - \`${body.contents.quotes[0].author}\``;
+			} catch (e) {
+				qod = '';
+			}
 		});
 		if (reminder || leaveDays === 0) {
 			const todayAsDMY = DateHelper.getDateAsDDMMYYYY(new Date());
@@ -92,13 +97,18 @@ const userCheckIn = new CronJob({
 			})
 			.then(([tommorowLeaveList, todayLeaveList, tommorowHoliday]) => {
 				if (tommorowLeaveList.length) {
+					onLeaveUserList = `${onLeaveUserList}\n---------------------------------------------\n*Tommorow's leave(s) :*\n---------------------------------------------\n`;
 					tommorowLeaveList.forEach((leave) => {
 						onLeaveUserList = `${onLeaveUserList}\n*\`${leave.real_name || leave.name}\`* is on leave from \`tommorow\`\n*From date: * ${moment(leave.fromDate).format('Do MMM gggg (ddd)')}\n*To Date: * ${moment(leave.toDate).format('Do MMM gggg (ddd)')}\n*Days : * ${leave.days} Days\n*Reason: * ${leave.reason}\n`;
 					});
 				}
-				todayLeaveList.forEach((leave) => {
-					todayLeaveuserList.push(leave.id);
-				});
+				if (todayLeaveList.length) {
+					onTodayLeaveList = `${onTodayLeaveList}\n---------------------------------------------\n*Today's leave(s) :*\n---------------------------------------------\n`;
+					todayLeaveList.forEach((leave) => {
+						onTodayLeaveList = `${onTodayLeaveList}\n*\`${leave.real_name || leave.name}\`* \n*From date: * ${moment(leave.fromDate).format('Do MMM gggg (ddd)')}\n*To Date: * ${moment(leave.toDate).format('Do MMM gggg (ddd)')}\n*Days : * ${leave.days} Days\n*Reason: * ${leave.reason}\n`;
+						todayLeaveuserList.push(leave.id);
+					});
+				}
 				if (reminder === true) {
 					leaveDeclare = `\n:santa: :confetti_ball: :tada:\n\n*\`Hey We have holiday for next ${(leaveDays - 1) / 2} day(s) due to ${leaveReasons}\`*\n\n I will miss you. enjoy holiday:confetti_ball::tada:`;
 					reminder = false;
@@ -115,7 +125,7 @@ const userCheckIn = new CronJob({
 						if (moment().format('HH').toString() === '08') {
 							text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
 							// if (_.find(config.admin, (o) => { return o === user.id; })) {
-							text = `${text}\n${onLeaveUserList}`;
+							text = `${text}\n${onLeaveUserList}${onTodayLeaveList}`;
 							// }
 						} else {
 							text = `A Gentle reminder for you *\`${user.real_name}\`*\nDon't forget to checkout when you leave the office by entering *\`out\`* command\n${leaveDeclare}`;
