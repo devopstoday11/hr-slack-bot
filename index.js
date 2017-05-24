@@ -70,8 +70,8 @@ bot.started((payload) => {
 });
 
 const userCheckIn = new CronJob({
-	// cronTime: '0 30 8,18 * * 1-6',
-	cronTime: '0 */10 * * * *',
+	cronTime: '0 30 8,18 * * 1-6',
+	// cronTime: '0 */10 * * * *',
 	onTick() {
 		let text = '';
 		let onLeaveUserList = '';
@@ -123,7 +123,7 @@ const userCheckIn = new CronJob({
 					const isUserOnLeave = todayLeaveuserList.indexOf(ims.user);
 					user = isUserOnLeave === -1 ? user : null;
 					if (user) {
-						if (moment().format('HH').toString() !== '08') {
+						if (moment().format('HH').toString() === '08') {
 							text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
 							// if (_.find(config.admin, (o) => { return o === user.id; })) {
 							text = `${text}\n${onLeaveUserList}${onTodayLeaveList}`;
