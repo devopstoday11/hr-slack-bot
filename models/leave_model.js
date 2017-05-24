@@ -9,27 +9,64 @@ const log = require('../helper/logger');
 function genRand() {
 	return Math.floor((Math.random() * 89999999) + 10000000);
 }
+function getDays(fromDate, toDate) {
+	return new Promise((resolve, reject) => {
+		let totalLeaveDays = Math.floor((toDate - fromDate) / 86400000) + 1;
+		module.exports.getHolidayByRange(fromDate, toDate)
+		.then((holidays) => {
+			const filteredHoliday = holidays.filter((holiday) => {
+				return holiday.day !== 'Sunday';
+			});
+			totalLeaveDays -= filteredHoliday.length;
+			let totalSundays = 0;
+			const startDate = new Date(fromDate);
+			const endDate = new Date(toDate);
+			for (let i = startDate; i <= endDate;) {
+				// console.log(i);
+				if (i.getDay() === 0) {
+					totalSundays += 1;
+				}
+				i.setTime(i.getTime() + (1000 * 60 * 60 * 24));
+			}
+			totalLeaveDays -= totalSundays;
+			if (totalLeaveDays === 0) {
+				resolve(false);
+			} else {
+				resolve({ totalLeaveDays, totalHolidays: filteredHoliday.length, totalSundays });
+			}
+		})
+		.catch((err) => {
+			resolve(0);
+		});
+	});
+}
 
 module.exports = {
 	saveLeaveRequest: (user, toDate, fromDate, reason) => {
 		return new Promise((resolve, reject) => {
-			let leaveRequest = {
-				name: user.name,
-				id: user.id,
-				real_name: user.real_name,
-				toDate,
-				fromDate,
-				reason,
-				days: Math.floor((toDate - fromDate) / 86400000) + 1,
-				leaveCode: genRand()
-			};
-			leaveRequest = new LeaveMdl(leaveRequest);
-			leaveRequest.save((err, response) => {
-				if (err) {
-					log.saveLogs(response.username, err, moment());
-					reject(err);
-				}
-				resolve(response);
+			getDays(fromDate, toDate)
+			.then((days) => {
+				let leaveRequest = {
+					name: user.name,
+					id: user.id,
+					real_name: user.real_name,
+					toDate,
+					fromDate,
+					reason,
+					days: days.totalLeaveDays,
+					leaveCode: genRand()
+				};
+				leaveRequest = new LeaveMdl(leaveRequest);
+				leaveRequest.save((err, response) => {
+					if (err) {
+						log.saveLogs(response.username, err, moment());
+						reject(err);
+					}
+					resolve({ response, days });
+				});
+			})
+			.catch((err) => {
+				reject(err);
 			});
 		});
 	},
@@ -79,10 +116,10 @@ module.exports = {
 		return new Promise((resolve, reject) => {
 			const query = LeaveMdl.find({
 				fromDate: {
-					$gte: dateToSearch,
+					$lte: dateToSearch,
 				},
 				toDate: {
-					$lte: dateToSearch,
+					$gte: dateToSearch,
 				},
 				isApproved: true
 			});
@@ -128,6 +165,50 @@ module.exports = {
 			query.sort('isoDate').exec((err, holidays) => {
 				if (err) reject(err);
 				resolve(holidays.length ? holidays : false);
+			});
+		});
+	},
+
+	getHolidayByRange: (fromDate, toDate) => {
+		return new Promise((resolve, reject) => {
+			const query = HolidayMdl.find({
+				isoDate: {
+					$lte: toDate,
+					$gte: fromDate
+				},
+			});
+			query.sort('isoDate').exec((err, holidays) => {
+				if (err) reject(err);
+				resolve(holidays);
+			});
+		});
+	},
+
+	checkForLeaveForUser: (user, date) => {
+		const dateToSearch = date.toDate();
+		return new Promise((resolve, reject) => {
+			const query = LeaveMdl.find({
+				fromDate: {
+					$lte: date,
+				},
+				toDate: {
+					$gte: date,
+				},
+				isApproved: true,
+				id: user,
+			});
+			query.exec((err, leavesheet) => {
+				if (err) reject(err);
+				resolve(leavesheet);
+			});
+		});
+	},
+
+	updateLeave: (leaveId, fromDate, toDate) => {
+		return new Promise((resolve, reject) => {
+			LeaveMdl.update({ _id: leaveId }, { toDate, fromDate, days: Math.floor((toDate - fromDate) / 86400000) + 1, }, (err, leaveReqest) => {
+				if (err) reject(err);
+				resolve(leaveReqest);
 			});
 		});
 	}

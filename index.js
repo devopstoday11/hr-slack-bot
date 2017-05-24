@@ -1,3 +1,4 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 	/* eslint-disable no-case-declarations, no-param-reassign */
 const slack = require('slack');
 const fs = require('fs');
@@ -69,8 +70,8 @@ bot.started((payload) => {
 });
 
 const userCheckIn = new CronJob({
-	cronTime: '0 30 8,18 * * 1-6',
-	// cronTime: '*/20 * * * * *',
+	// cronTime: '0 30 8,18 * * 1-6',
+	cronTime: '0 */10 * * * *',
 	onTick() {
 		let text = '';
 		let onLeaveUserList = '';
@@ -122,7 +123,7 @@ const userCheckIn = new CronJob({
 					const isUserOnLeave = todayLeaveuserList.indexOf(ims.user);
 					user = isUserOnLeave === -1 ? user : null;
 					if (user) {
-						if (moment().format('HH').toString() === '08') {
+						if (moment().format('HH').toString() !== '08') {
 							text = `Good Morning *\`${user.real_name}\`*:city_sunrise::sun_small_cloud:\n\nLet's check you in.\n proceed by entering *\`in\`* command`;
 							// if (_.find(config.admin, (o) => { return o === user.id; })) {
 							text = `${text}\n${onLeaveUserList}${onTodayLeaveList}`;
@@ -305,7 +306,25 @@ bot.message((message) => {
 			}).then((data) => {
 				taskReminder.setReminder(message, data, new Date().getTime());
 				Message.postMessage(message, 'What are the tasks that you are going to perform today?');
-			}).catch((err) => {
+				return LeaveMdl.checkForLeaveForUser(message.user, moment().startOf('day'));
+			})
+			.then((leave) => {
+				if (leave.length) {
+					Message.postMessage(message, 'Looks Like `you were on leave` today \nNo problem you can proceed with check-ins but as my duty I have informed all the admins about your presence\nAnd one more `important thing` , I have cancelled you today\'s leave and all the concurrent days leave(if any)');
+					const adminIMS = [];
+					config.admin.forEach((admin) => {
+						const ims = _.find(payloadIms, { user: admin });
+						if (ims) {
+							adminIMS.push(ims.id);
+						}
+					});
+					adminIMS.forEach((channelId) => {
+						Message.postLeavePresentMessageToAdmin(channelId, leave[0], user);
+					});
+					LeaveMdl.updateLeave(leave[0]._id, leave[0].fromDate, moment().subtract(1, 'days').toDate());
+				}
+			})
+			.catch((err) => {
 				log.saveLogs(message.user, err, moment());
 				Message.postErrorMessage(message, err);
 			});
@@ -439,20 +458,30 @@ bot.message((message) => {
 					if (toDate && fromDate) {
 						if (fromDate.getTime() <= toDate.getTime()) {
 							LeaveMdl.saveLeaveRequest(user, toDate, fromDate, reason)
-							.then((newLeaveReport) => {
-								Message.postMessage(message, `Your leave request has been sent to admins for approval\n*Request Id : * *\`${newLeaveReport.leaveCode}\`*\n Sit back and relax I will notify you when I get update on this request.`);
-								const adminIMS = [];
-								config.admin.forEach((admin) => {
-									const ims = _.find(payloadIms, { user: admin });
-									if (ims) {
-										adminIMS.push(ims.id);
-									}
-								});
-								adminIMS.forEach((channelId) => {
-									Message.postLeaveMessageToAdmin(channelId, user, newLeaveReport);
-								});
+							.then((leaveData) => {
+								if (!leaveData.days) {
+									Message.postMessage(message, 'No leave Needed for this period may be already holiday during this period');
+								} else {
+									const newLeaveReport = leaveData.response;
+									Message.postMessage(message, `Your leave request has been sent to admins for approval\n*Request Id : * *\`${newLeaveReport.leaveCode}\`*\n Sit back and relax I will notify you when I get update on this request.\n\n
+*Number of days :* ${leaveData.days.totalLeaveDays}\n
+*Number of Sundays :* ${leaveData.days.totalSundays}\n
+*Number of public holidays :* ${leaveData.days.totalHolidays}\n
+										`);
+									const adminIMS = [];
+									config.admin.forEach((admin) => {
+										const ims = _.find(payloadIms, { user: admin });
+										if (ims) {
+											adminIMS.push(ims.id);
+										}
+									});
+									adminIMS.forEach((channelId) => {
+										Message.postLeaveMessageToAdmin(channelId, user, newLeaveReport);
+									});
+								}
 							})
 							.catch((e) => {
+								log.saveLogs(user.real_name, e, moment());
 								Message.postErrorMessage(message, new Error('\nThere is some problem serving you request. Please try again till then I will repair myself.'));
 							});
 						} else {
@@ -488,6 +517,7 @@ bot.message((message) => {
 					}
 				})
 				.catch((e) => {
+					log.saveLogs(user.real_name, e, moment());
 					Message.postErrorMessage(message, new Error('\nThere is some problem serving you request. Please try again till then I will repair myself.'));
 				});
 				break;
@@ -647,7 +677,7 @@ bot.message((message) => {
 					if (message.text.substr(0, spaceIndex) === 'excel') {
 						userId = message.text.substr(spaceIndex + 3, 9);
 					}
-					DB.getSpecificTimesheet(userId, 1, 30)
+					DB.getSpecificTimesheet(userId, 1, 365)
 				.then((timesheet) => {
 					if (typeof timesheet[0] === 'undefined') {
 						throw new Error('No data to fetch!');

@@ -709,4 +709,47 @@ module.exports = {
 			module.exports.postErrorMessage(message, tryError);
 		}
 	},
+
+	postLeavePresentMessageToAdmin: (channelId, leave, user) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: channelId,
+			title: 'Title',
+			text: `*${leave.real_name}* was on leave but he/she has checked in for today. so as my noble duty I am informing you about that`,
+			as_user: true,
+			attachments: [
+				{
+					color: '#439FE0',
+					mrkdwn_in: ['text', 'fields'],
+					fields: [
+						{
+							title: 'Leave From',
+							value: `*\`${DateHelper.getDateAsDDMMYYYY(leave.fromDate)}\`*`,
+							short: true
+						}, {
+							title: 'Leave To',
+							value: `*\`${DateHelper.getDateAsDDMMYYYY(leave.toDate)}\`*`,
+							short: true
+						}, {
+							title: 'Days',
+							value: `${leave.days}`,
+							short: false
+						}, {
+							title: 'Reason',
+							value: `${leave.reason}`,
+							short: false
+						}, {
+							title: 'Note',
+							value: `I have cancelled today's leave and any upcomint concurrent leave for ${leave.real_name}`,
+							short: false
+						}
+					],
+					thumb_url: user.image_192,
+				}
+			] }, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs(leave.real_name, errSave, new Date());
+			}
+		});
+	},
 };
