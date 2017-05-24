@@ -1,5 +1,4 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-	/* eslint-disable no-case-declarations, no-param-reassign */
+/* eslint-disable no-case-declarations, no-param-reassign */
 const slack = require('slack');
 const fs = require('fs');
 const request = require('request');
