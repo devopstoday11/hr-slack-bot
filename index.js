@@ -102,6 +102,10 @@ const userCheckIn = new CronJob({
 						onLeaveUserList = `${onLeaveUserList}\n*\`${leave.real_name || leave.name}\`* is on leave from \`tommorow\`\n*From date: * ${moment(leave.fromDate).format('Do MMM gggg (ddd)')}\n*To Date: * ${moment(leave.toDate).format('Do MMM gggg (ddd)')}\n*Days : * ${leave.days} Days\n*Reason: * ${leave.reason}\n`;
 					});
 				}
+				// ignore who dont want notification (dual channel) - arpit (U2HG4B24R),dk (U1XM7QFKR)
+				todayLeaveList = todayLeaveList.filter((leave) => {
+					return (leave.id !== 'U2HG4B24R' || leave.id !== 'U1XM7QFKR');
+				});
 				if (todayLeaveList.length) {
 					onTodayLeaveList = `${onTodayLeaveList}\n---------------------------------------------\n*Today's leave(s) :*\n---------------------------------------------\n`;
 					todayLeaveList.forEach((leave) => {
