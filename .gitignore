@@ -49,3 +49,16 @@ sheets
 .DS_Store
 
 deploy
+
+
+v2/config
+
+v2/config/index.js
+
+v2/schemas/.DS_Store
+
+v2/sheets
+
+v2/.DS_Store
+
+v2/deploy
