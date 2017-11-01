@@ -25,8 +25,22 @@ module.exports = {
 			.delay(1800000)
 			.priority('high')
 			.save();
+	},
+
+	setCustomRemind: (message, payloadIms, msg) => {
+		const job = jobs.create('custom-remainder', { message, payloadIms, msg })
+			.delay(180000)
+			.priority('high')
+			.save();
 	}
 };
+
+jobs.process('custom-remainder', 10, (job, done) => {
+	job.data.payloadIms.forEach((ims) => {
+		Message.postMessageToSpecificUser(ims.id, job.data.msg);
+	});
+});
+
 
 jobs.process(`reminder-${config.postChannelId}`, 10, (job, done) => {
 	DB.getTodayTimesheet(job.data.message.user)
@@ -64,4 +78,4 @@ jobs.process(`deadline-${config.postChannelId}`, 10, (job, done) => {
 	done();
 });
 
-// kue.app.listen(3005);
+kue.app.listen(config.kuePort);

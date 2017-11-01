@@ -7,6 +7,7 @@ const DB = require('../models');
 const LeaveMdl = require('../schemas/leave');
 const config = require('../config');
 const log = require('../helper/logger');
+const dateFormat = require('dateformat');
 const DateHelper = require('../helper/date_parser');
 
 module.exports = {
@@ -34,6 +35,34 @@ module.exports = {
 			text: `${textMessage}`,
 			as_user: true,
 			fallback: `${textMessage}`
+		}, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs(message.user, errSave, new Date());
+			}
+		});
+	},
+	postMessageToSpecificUser: (channel, textMessage) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel,
+			title: 'Title',
+			text: `${textMessage}`,
+			as_user: true,
+			fallback: `${textMessage}`
+		}, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs('', errSave, new Date());
+			}
+		});
+	},
+	postSomethingWrongMessage: (message) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: message.channel,
+			title: 'Title',
+			text: `Something went wrong while processing your request!\nPlease Contact to \`${config.developer}\`!`,
+			as_user: true,
+			fallback: 'Something went wrong while processing your request!\nPlease try again later!'
 		}, (errSave, data) => {
 			if (errSave) {
 				log.saveLogs(message.user, errSave, new Date());
@@ -157,6 +186,28 @@ module.exports = {
 			});
 		});
 	},
+	postUserProfileMessage: (message, user) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: message.channel,
+			title: 'Title',
+			text: `*${user.real_name}* Profile`,
+			as_user: true,
+			attachments: [{
+				color: '#36a64f',
+				fallback: `${user.real_name} `,
+				title: `${user.real_name}`,
+				thumb_url: user.image_192,
+				text: `Short Introduction: ${user.shortIntro} \n\nBio: ${user.bio} \n\nBirth Day: ` +
+								`${user.birthDay} \n\nHobbies: ${user.hobbies}` +
+								`\n\nRole: ${user.role} \n\nFavourite Quote: ${user.quote}\n\nSkills: ${user.skills}`
+			}
+			] }, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs(user.name, errSave, new Date());
+			}
+		});
+	},
 
 	updateChannelInMessage: (timesheet, oldTs, user, updatedTask) => {
 		slack.chat.update({
@@ -277,6 +328,155 @@ module.exports = {
 					author_name: 'Command',
 					title: 'HOLIDAYLIST',
 					text: 'Get the list of holidays as excel sheet'
+				},
+				{
+					fallback: 'HELP',
+					color: '#ff00ff',
+					pretext: 'help related to other things',
+					title: 'OTHER HELP COMMANDS',
+					text: 'Other Help Commands:' +
+					'\n help report: to seek any type of help related to your week report, month report, leave report etc.' +
+					'\n help profile: to seek any type of help related to your Profile' +
+					'\n help leave: to seek any type of help related to LEAVE' +
+					'\n help admin: If you are the admin',
+				}
+			]
+		}, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs('Undefined', errSave, new Date());
+			}
+		});
+	},
+	postHelpLeaveMessage: (message, error) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: message.channel,
+			title: 'HELP DESK',
+			fallback: 'HELP DESK',
+			text: 'Always happy to help\n',
+			as_user: true,
+			attachments: [
+				{
+					fallback: 'LEAVE',
+					color: '#00ff00',
+					pretext: 'For requesting leave',
+					author_name: 'Command',
+					title: 'LEAVE FROMDATE(DD-MM-YYYY) TODATE(DD-MM-YYYY) REASON',
+					text: 'Ex. leave 6-2-2017 8-2-2017 going to home for family function\n It will be sent to hr and admins for review \n For one day leave keep to and from date same'
+				},
+				{
+					fallback: 'HOLIDAY',
+					color: '#ff0000',
+					pretext: 'For Holiday List',
+					author_name: 'Command',
+					title: 'HOLIDAY',
+					text: 'Get the list of holidays as message'
+				}, {
+					fallback: 'HOLIDAY SHEET',
+					color: '#ffff00',
+					pretext: 'For Holiday List in excel sheet',
+					author_name: 'Command',
+					title: 'HOLIDAYLIST',
+					text: 'Get the list of holidays as excel sheet'
+				},
+			]
+		}, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs('Undefined', errSave, new Date());
+			}
+		});
+	},
+	postHelpReportMessage: (message, error) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: message.channel,
+			title: 'HELP DESK',
+			fallback: 'HELP DESK',
+			text: 'Always happy to help\n',
+			as_user: true,
+			attachments: [
+				{
+					fallback: 'WEEK',
+					color: '#cc0066',
+					pretext: 'Your last week report',
+					author_name: 'Command',
+					title: 'WEEK',
+				}, {
+					fallback: 'MONTH',
+					color: '#808000',
+					pretext: 'Your last month report',
+					author_name: 'Command',
+					title: 'MONTH',
+				}, {
+					fallback: 'EXCEL',
+					color: '#b33c00',
+					pretext: 'Excel report of yout timesheet',
+					author_name: 'Command',
+					title: 'EXCEL',
+				}, {
+					fallback: 'LEAVEREPORT',
+					color: '#36a64f',
+					pretext: 'Your leave request report',
+					author_name: 'Command',
+					title: 'LEAVEREPORT',
+				}
+			]
+		}, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs('Undefined', errSave, new Date());
+			}
+		});
+	},
+
+	postHelpProfileMessage: (message, error) => {
+		slack.chat.postMessage({
+			token: config.token,
+			channel: message.channel,
+			title: 'HELP DESK',
+			fallback: 'HELP DESK',
+			text: 'Always happy to help\n',
+			as_user: true,
+			attachments: [
+				{
+					fallback: 'PROFILE UPDATE',
+					color: '#00ff00',
+					pretext: 'To update your profile',
+					author_name: 'Command',
+					title: 'PROFILE UPDATE FIELD_NAME VALUE',
+					text: 'Ex. profile update birthday 14-01-1996. you can add your birthday, introduction, bio, favourite quote, hobbies\n\n' +
+					'Commands: \nprofile update intro VALUE \nprofile update bio VALUE\nprofile update quote VALUE\nprofile update hobby HOBBY1, HOBBY2, HOBBY3'
+				},
+				{
+					fallback: 'SKILL ADD',
+					color: '#808000',
+					pretext: 'To add skills to your profile',
+					author_name: 'Command',
+					title: 'SKILL ADD SKILL-1,SKILL-2,SKILL-3',
+					text: 'Ex. skill add skill-1,skill-2. You can add multiple skill with comma separated values'
+				},
+				{
+					fallback: 'SKILL REMOVE',
+					color: '#b33c00',
+					pretext: 'To remove skills from your profile',
+					author_name: 'Command',
+					title: 'SKILL REMOVE SKILL-1,SKILL-2,SKILL-3',
+					text: 'Ex. skill remove skill-1,skill-2. \nYou can remove multiple skill with comma separated values'
+				},
+				{
+					fallback: 'SKILL ADD LEVEL',
+					color: '#36a64f',
+					pretext: 'To add skill level',
+					author_name: 'Command',
+					title: 'SKILL ADD LEVEL OF SKILL_NAME LEVEL_VALUE',
+					text: `Ex. skill add level of node js beginner.\nAllowed Levels are: ${config.skillLevels}`
+				},
+				{
+					fallback: 'SKILL @username',
+					color: '#00cccc',
+					pretext: 'To take a look at someone\'s skills',
+					author_name: 'Command',
+					title: 'SKILL @username',
+					text: 'Ex. skill @rinkal'
 				}
 			]
 		}, (errSave, data) => {
@@ -296,61 +496,33 @@ module.exports = {
 			as_user: true,
 			attachments: [
 				{
-					fallback: 'IN',
-					color: '#36a64f',
-					pretext: 'Once entered the office',
-					author_name: 'Command',
-					title: 'IN / IN HH:MM',
-					text: 'If you are entering in command and want to keep in time as the current time then enter only IN and if you want to change in time than current time then please provide  time in HH:MM formate after IN'
-				}, {
-					fallback: 'OUT',
-					color: '#0000ff',
-					pretext: 'When Leaving the office',
-					author_name: 'Command',
-					title: 'OUT / OUT HH:MM',
-					text: 'Timing rules are same as IN command'
-				}, {
-					fallback: 'LEAVE',
-					color: '#00ff00',
-					pretext: 'For requesting leave',
-					author_name: 'Command',
-					title: 'LEAVE FROMDATE(DD-MM-YYYY) TODATE(DD-MM-YYYY) REASON',
-					text: 'Ex. leave 6-2-2017 8-2-2017 going to home for family function\n It will be sent to hr and admins for review \n For one day leave keep to and from date same'
-				}, {
-					fallback: 'HOLIDAY',
-					color: '#ff0000',
-					pretext: 'For Holiday List',
-					author_name: 'Command',
-					title: 'HOLIDAY',
-					text: 'Get the list of holidays as message'
-				}, {
-					fallback: 'HOLIDAY SHEET',
-					color: '#ffff00',
-					pretext: 'For Holiday List in excel sheet',
-					author_name: 'Command',
-					title: 'HOLIDAYLIST',
-					text: 'Get the list of holidays as excel sheet'
-				}, {
 					fallback: 'WEEK',
 					color: '#cc0066',
 					pretext: 'Weekly report of user',
 					author_name: 'Command',
 					title: 'WEEK @username',
-					text: 'Ex. WEEK @ridham .It will print Ridham\'s last week timesheet'
+					text: 'Ex. WEEK @rinkal .It will print Rinkal\'s last week timesheet'
 				}, {
 					fallback: 'MONTH',
 					color: '#808000',
 					pretext: 'Monthly report of user',
 					author_name: 'Command',
 					title: 'MONTH @username',
-					text: 'Ex. MONTH @ridham .It will print Ridham\'s last month timesheet'
+					text: 'Ex. MONTH @rinkal .It will print Rinkal\'s last month timesheet'
 				}, {
 					fallback: 'EXCEL',
 					color: '#b33c00',
 					pretext: 'Excel report of user',
 					author_name: 'Command',
 					title: 'EXCEL @username',
-					text: 'Ex. EXCEL @ridham .It will generate excel sheet of Ridham\'s  timesheet'
+					text: 'Ex. EXCEL @rinkal .It will generate excel sheet of Rinkal\'s  timesheet'
+				}, {
+					fallback: 'LEAVEREPORT @rinkal',
+					color: '#36a64f',
+					pretext: 'Leave Request Report Of User',
+					author_name: 'Command',
+					title: 'LEAVEREPORT @username',
+					text: 'Ex. LEAVEREPORT @rinkal'
 				}, {
 					fallback: 'LEAVEACCEPT requestID your notes',
 					color: '#00cccc',
@@ -366,19 +538,19 @@ module.exports = {
 					title: 'LEAVEREJECT leaverequestId Notes',
 					text: 'Ex. LEAVEREJECT 16060120 your notes'
 				}, {
-					fallback: 'LEAVEREPORT @ridham',
-					color: '#36a64f',
-					pretext: 'Leave Request Report Of User',
-					author_name: 'Command',
-					title: 'LEAVEREPORT @username',
-					text: 'Ex. LEAVEREPORT @ridham'
-				}, {
 					fallback: 'LEAVESET dd-mm-yyyy  Reason',
 					color: '#ff0000',
 					pretext: 'Set leave to stop reminder on custom holidays(if number is given then for next that days ignoring sunday will be set as leave & if date is given then for that date leave is set)',
 					author_name: 'Command',
 					title: 'LEAVESET dd-mm-yyyy Number_of_continous_day Reason',
 					text: 'Ex. LEAVESET 12-03-2017 2 Holi-Dhuleti'
+				}, {
+					fallback: 'PROFILE SET ROLE',
+					color: '#00ff00',
+					pretext: 'To update a user\'s role',
+					author_name: 'Command',
+					title: 'PROFILE SET ROLE ROLE_VALUE OF @username',
+					text: `Ex. profile set role developer of rinkal. set role of ${config.developer} to developer!\nAllowed roles are: ${config.userRoles}`
 				}
 			]
 		}, (errSave, data) => {
@@ -393,7 +565,7 @@ module.exports = {
 			token: config.token,
 			channel: channelId,
 			title: 'Title',
-			text: `*${user.real_name}* has requested for leave.\n*Accept :* \`leaveaccept ${leaveReport.leaveCode} your notes\`\n*Reject :* \`leavereject ${leaveReport.leaveCode} your notes\``,
+			text: `*${user.real_name}* has requested for leave.\n*Accept :* \n\`LEAVEACCEPT ${leaveReport.leaveCode} your notes\`\n*Reject :* \n\`LEAVEREJECT ${leaveReport.leaveCode} your notes\``,
 			as_user: true,
 			attachments: [
 				{
@@ -440,6 +612,57 @@ module.exports = {
 			as_user: true,
 			attachments: [
 				{
+					color: '#439FE0',
+					mrkdwn_in: ['text', 'fields'],
+					fields: [
+						{
+							title: 'Leave From',
+							value: `*\`${DateHelper.getDateAsDDMMYYYY(leaveReport.fromDate)}\`*`,
+							short: true
+						},
+						{
+							title: 'Leave To',
+							value: `*\`${DateHelper.getDateAsDDMMYYYY(leaveReport.toDate)}\`*`,
+							short: true
+						},
+						{
+							title: 'Days',
+							value: `${leaveReport.days}`,
+							short: false
+						},
+						{
+							title: 'Reason',
+							value: `${leaveReport.reason}`,
+							short: false
+						}, {
+							title: 'Status',
+							value: `\`${leaveStatus}\``,
+							short: true
+						}, {
+							title: 'Action Reason',
+							value: `\`${leaveReport.note}\``,
+							short: true
+						}
+					],
+				}
+			] }, (errSave, data) => {
+			if (errSave) {
+				log.saveLogs(leaveReport.real_name, errSave, new Date());
+			}
+		});
+	},
+
+	postLeaveStatusMessageToAdmin: (channelId, leaveReport) => {
+		const leaveStatus = leaveReport.isApproved ? 'Accepted' : 'Rejected';
+		slack.chat.postMessage({
+			token: config.token,
+			channel: channelId,
+			title: 'Title',
+			text: `Following leave was *${leaveStatus}* by *${leaveReport.actionBy}*\n*${leaveReport.real_name}* has requested for leave`,
+			as_user: true,
+			attachments: [
+				{
+					author_name: `${leaveReport.real_name}`,
 					color: '#439FE0',
 					mrkdwn_in: ['text', 'fields'],
 					fields: [
